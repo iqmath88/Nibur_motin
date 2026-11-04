@@ -1,5 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
+const NM=window.NM;
+
 const MAX_SCENE_DURATION=120;
 const TYPE_STYLES=['none','rounded','rectangle','outline','underline','highlight'];
 const ALLOWED_COLORS=['#f4d96c','#cfe7fa','#e3efda','#f7d5e5','#ffffff','#193c5d','#f8e7c8'];
@@ -18,12 +20,13 @@ function cleanBranding(b){return {header:brandingText(b?.header,brandingDefaults
 
 const bounded=(x,min,max,fallback)=>{let n=Number(x);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback};
 function makeSceneId(){return (crypto.randomUUID?.()||'scene-'+Date.now()+'-'+Math.random().toString(36).slice(2))}
-const cleanScene=s=>({id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),titleSize:bounded(s?.titleSize,30,100,57),questionSize:bounded(s?.questionSize,30,90,46),equationScale:bounded(s?.equationScale,60,150,100),answerScale:bounded(s?.answerScale,60,150,100),titleBg:TYPE_STYLES.includes(s?.titleBg)?s.titleBg:'rounded',questionBg:TYPE_STYLES.includes(s?.questionBg)?s.questionBg:'none',answerBg:TYPE_STYLES.includes(s?.answerBg)?s.answerBg:'rounded',titleBgColor:cleanColor(s?.titleBgColor,'#f4d96c'),questionBgColor:cleanColor(s?.questionBgColor,'#cfe7fa'),answerBgColor:cleanColor(s?.answerBgColor,'#e3efda'),titleY:bounded(s?.titleY,17,47,32.5),questionY:bounded(s?.questionY,28,68,44.3),equationY:bounded(s?.equationY,40,79,57.6),answerY:bounded(s?.answerY,55,90,72.1),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
-function cleanSticker(s){return {id:String(s?.id||Date.now()+'-'+Math.random()),icon:['❓','❗','💡','✅','✏️','🎯','➡️','⭐','⭕','⚠️'].includes(s?.icon)?s.icon:'❓',x:bounded(s?.x,0,1,.5),y:bounded(s?.y,0,1,.38),size:bounded(s?.size,45,380,140),start:bounded(s?.start,0,95,10),end:bounded(s?.end,5,100,95),animation:['pop','fade','spin','static'].includes(s?.animation)?s.animation:'pop'}}
-function cleanAudio(a){return {offset:bounded(a?.offset,0,30,0),volume:bounded(a?.volume,0,1,1)}}
-function cleanProject(x){if(!Array.isArray(x?.scenes)||!x.scenes.length||x.scenes.length>100)throw Error('ملف المشروع غير صالح');return {projectId:String(x.projectId||makeSceneId()),name:String(x.name||'مشروع').slice(0,120),theme:themes.includes(x.theme)?x.theme:'notebook',branding:cleanBranding(x.branding),audio:cleanAudio(x.audio),scenes:x.scenes.map(cleanScene)}}
-let state={projectId:makeSceneId(),name:'حل معادلة لوغاريتمية',theme:'notebook',branding:cleanBranding(brandingDefaults),audio:cleanAudio(null),scenes:defaults.map(cleanScene)};
+const cleanScene=s=>({ ...NM.mathanim.settings(s), ...NM.overlays.scene(s), resultEffect:NM.audiomix.effect(s?.resultEffect),voiceDuration:bounded(s?.voiceDuration,0,120,0), id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),titleSize:bounded(s?.titleSize,30,100,57),questionSize:bounded(s?.questionSize,30,90,46),equationScale:bounded(s?.equationScale,60,150,100),answerScale:bounded(s?.answerScale,60,150,100),titleBg:TYPE_STYLES.includes(s?.titleBg)?s.titleBg:'rounded',questionBg:TYPE_STYLES.includes(s?.questionBg)?s.questionBg:'none',answerBg:TYPE_STYLES.includes(s?.answerBg)?s.answerBg:'rounded',titleBgColor:cleanColor(s?.titleBgColor,'#f4d96c'),questionBgColor:cleanColor(s?.questionBgColor,'#cfe7fa'),answerBgColor:cleanColor(s?.answerBgColor,'#e3efda'),titleY:bounded(s?.titleY,17,47,32.5),questionY:bounded(s?.questionY,28,68,44.3),equationY:bounded(s?.equationY,40,79,57.6),answerY:bounded(s?.answerY,55,90,72.1),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
+function cleanSticker(s){return {id:String(s?.id||Date.now()+'-'+Math.random()),icon:['❓','❗','💡','✅','✏️','🎯','➡️','⭐','⭕','⚠️'].includes(s?.icon)?s.icon:'❓',x:bounded(s?.x,0,1,.5),y:bounded(s?.y,0,1,.38),size:bounded(s?.size,45,380,140),start:bounded(s?.start,0,95,10),end:bounded(s?.end,5,100,95),animation:['pop','fade','spin','static'].includes(s?.animation)?s.animation:'pop',effect:NM.audiomix.effect(s?.effect)}}
+function cleanAudio(a){return {...NM.audiomix.settings(a),offset:bounded(a?.offset,0,30,0),volume:bounded(a?.volume,0,1,1)}}
+function cleanProject(x){if(!Array.isArray(x?.scenes)||!x.scenes.length||x.scenes.length>100)throw Error('ملف المشروع غير صالح');return {projectId:String(x.projectId||makeSceneId()),name:String(x.name||'مشروع').slice(0,120),theme:themes.includes(x.theme)?x.theme:'notebook',branding:cleanBranding(x.branding),fonts:NM.fonts.clean(x.fonts),captions:NM.captions.settings(x.captions),overlays:NM.overlays.project(x.overlays),audio:cleanAudio(x.audio),scenes:x.scenes.map(cleanScene)}}
+let state={projectId:makeSceneId(),name:'حل معادلة لوغاريتمية',theme:'notebook',branding:cleanBranding(brandingDefaults),fonts:NM.fonts.clean(),captions:NM.captions.settings(),overlays:NM.overlays.project(),audio:cleanAudio(null),scenes:defaults.map(cleanScene)};
 try{const saved=JSON.parse(localStorage.getItem('nibor-motion-v1'));if(saved)state=cleanProject(saved)}catch(e){console.warn('تعذر استعادة المشروع',e)}
+NM.project=state;let subtitleTimeline=[],audioTimeline=null;const rebuildTimeline=()=>{NM.project=state;subtitleTimeline=NM.captions.schedule(state,id=>voiceBlobs?.has(id));audioTimeline=NM.audiomix.timeline(state,voiceBlobs||new Map());};
 let selectedStickerId=null;let index=0,playing=false,exporting=false,playToken=0,clock=0,mathfieldReady=false,fieldSync=false,renderTicket=0;
 const ctx=$('stage').getContext('2d',{alpha:false});const CW=1080,CH=1920;
 const mathCache=new Map();let mathReady=false;
@@ -32,7 +35,7 @@ const sceneFormulaKeys=()=>new Set(state.scenes.flatMap(s=>[
  mathKey(s.equation,formulaColor()),mathKey(s.answer,answerFormulaColor(s))
 ]).filter(k=>k.split('|')[1]));
 function trimMathCache(){
- const used=sceneFormulaKeys();
+ const used=new Set(usedMathPairs().map(([raw,color])=>mathKey(raw,color)));
  for(const [key,entry] of mathCache){
   if(mathCache.size<=MATH_CACHE_LIMIT)break;
   if(!used.has(key)&&!entry.pending)mathCache.delete(key);
@@ -43,13 +46,13 @@ const answerFormulaColor=s=>['rounded','rectangle'].includes(s.answerBg)?backdro
 let mathDebounce=null;
 function scheduleMathWarm(){clearTimeout(mathDebounce);mathDebounce=setTimeout(()=>{prewarm();trimMathCache()},250)}
 const status=msg=>{$('status').textContent=msg};
-function save(){try{localStorage.setItem('nibor-motion-v1',JSON.stringify(state))}catch(e){status('تعذر الحفظ على الجهاز. صدّر المشروع JSON للاحتفاظ بنسخة احتياطية.')}}
+function save(){NM.project=state;rebuildTimeline();try{localStorage.setItem('nibor-motion-v1',JSON.stringify(state))}catch(e){status('تعذر الحفظ على الجهاز. صدّر المشروع JSON للاحتفاظ بنسخة احتياطية.')}}
 function seconds(){return state.scenes.reduce((a,s)=>a+s.duration,0)}
 function sceneStart(i){return state.scenes.slice(0,i).reduce((a,s)=>a+s.duration,0)}
 function atTime(t){let passed=0;for(let i=0;i<state.scenes.length;i++){let d=state.scenes[i].duration;if(t<passed+d || i===state.scenes.length-1)return {index:i,progress:Math.max(0,Math.min(1,(t-passed)/d))};passed+=d}return {index:0,progress:0}}
 function fmt(t){t=Math.max(0,Math.floor(t));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
 function setBusy(v){playing=v;$('play').disabled=v;$('export').disabled=v;$('png').disabled=v;$('stop').disabled=!v}
-function drawControls(){const s=state.scenes[index];$('scenes').replaceChildren();state.scenes.forEach((scene,i)=>{const el=document.createElement('button');el.type='button';el.className='scene'+(i===index?' active':'');const t=document.createElement('span');t.textContent=`${i+1}. ${scene.title||'مشهد جديد'}`;const d=document.createElement('small');d.textContent=`${scene.duration} ث`;el.append(t,d);el.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+state.scenes[i].duration;stopSceneAudio();drawControls();render(1)};$('scenes').append(el)});$('timeline').replaceChildren();state.scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=i===index?'active':'';b.textContent=`${i+1} · ${s.duration}ث`;b.style.flexGrow=String(s.duration);b.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+s.duration;stopSceneAudio();drawControls();render(1)};$('timeline').append(b)});for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).value=s[key];syncTypographyControls();for(const pair of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']])$(pair[1]).textContent=s[pair[0]]+'%';$('theme').value=state.theme;$('project').value=state.name;$('counter').textContent=`${index+1} / ${state.scenes.length}`;updateSeek();syncMathField(s.equation);refreshStickers();syncSceneVoiceUI()}
+function drawControls(){const s=state.scenes[index];syncExtraControls();$('scenes').replaceChildren();state.scenes.forEach((scene,i)=>{const el=document.createElement('button');el.type='button';el.className='scene'+(i===index?' active':'');const t=document.createElement('span');t.textContent=`${i+1}. ${scene.title||'مشهد جديد'}`;const d=document.createElement('small');d.textContent=`${scene.duration} ث`;el.append(t,d);el.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+state.scenes[i].duration;stopSceneAudio();drawControls();render(1)};$('scenes').append(el)});$('timeline').replaceChildren();state.scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=i===index?'active':'';b.textContent=`${i+1} · ${s.duration}ث`;b.style.flexGrow=String(s.duration);b.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+s.duration;stopSceneAudio();drawControls();render(1)};$('timeline').append(b)});for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).value=s[key];syncTypographyControls();for(const pair of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']])$(pair[1]).textContent=s[pair[0]]+'%';$('theme').value=state.theme;$('project').value=state.name;$('counter').textContent=`${index+1} / ${state.scenes.length}`;updateSeek();syncMathField(s.equation);refreshStickers();syncSceneVoiceUI()}
 const TYPO_FIELDS=['titleSize','questionSize','equationScale','answerScale','titleY','questionY','equationY','answerY','titleBg','questionBg','answerBg','titleBgColor','questionBgColor','answerBgColor'];
 function syncTypographyControls(){
  const scene=state.scenes[index];
@@ -67,7 +70,7 @@ for(const key of TYPO_FIELDS){const el=$(key);if(el)el.addEventListener(el.tagNa
 $('resetTypography').onclick=()=>{if(playing)return;const scene=state.scenes[index];const d=cleanScene({});for(const key of TYPO_FIELDS)scene[key]=d[key];save();syncTypographyControls();scheduleMathWarm();renderCurrent();status('تمت استعادة تنسيق النصوص الافتراضي لهذا المشهد')};
 function updateSeek(){const total=seconds();$('seek').value=Math.round(1000*clock/Math.max(.01,total));$('time').textContent=`${fmt(clock)} / ${fmt(total)}`}
 function syncMathField(value){const field=$('mathfield');if(!mathfieldReady||!field)return;fieldSync=true;try{field.value=value||''}catch(e){console.warn(e)}fieldSync=false}
-function redrawAfterEdit(key,val){const s=state.scenes[index];s[key]=(['duration'].includes(key)?bounded(val,1,MAX_SCENE_DURATION,4):['qAt','eAt','aAt'].includes(key)?bounded(val,0,95,20):String(val));save();if(key==='duration'){clock=sceneStart(index)+s.duration;drawControls()}else{if(key==='title'){const label=$('scenes').children[index]?.firstChild;if(label)label.textContent=`${index+1}. ${s.title||'مشهد جديد'}`;}if(key==='equation'&&$('mathfield')?.value!==s.equation)syncMathField(s.equation);if(['qAt','eAt','aAt'].includes(key))$({qAt:'qOut',eAt:'eOut',aAt:'aOut'}[key]).textContent=s[key]+'%';render(1)}if(key==='equation'||key==='answer')scheduleMathWarm();}
+function redrawAfterEdit(key,val){const s=state.scenes[index];s[key]=(['duration'].includes(key)?bounded(val,1,MAX_SCENE_DURATION,4):['qAt','eAt','aAt'].includes(key)?bounded(val,0,95,20):String(val));save();if(key==='duration'){clock=sceneStart(index)+s.duration;drawControls()}else{if(key==='title'){const label=$('scenes').children[index]?.firstChild;if(label)label.textContent=`${index+1}. ${s.title||'مشهد جديد'}`;}if(key==='equation'&&$('mathfield')?.value!==s.equation)syncMathField(s.equation);if(['qAt','eAt','aAt'].includes(key))$({qAt:'qOut',eAt:'eOut',aAt:'aOut'}[key]).textContent=s[key]+'%';render(1)}if(key==='equation'||key==='answer')scheduleMathWarm();if(key==='speechText')rebuildTimeline();}
 for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).addEventListener('input',e=>{if(playing)return;redrawAfterEdit(key,e.target.value)});
 function syncBrandingControls(){const b=state.branding;$('videoHeader').value=b.header;$('videoFooter').value=b.footer;$('showHeader').checked=b.showHeader;$('showFooter').checked=b.showFooter;$('headerSize').value=b.headerSize;$('footerSize').value=b.footerSize;$('headerSizeOut').textContent=b.headerSize+'px';$('footerSizeOut').textContent=b.footerSize+'px'}
 for(const [id,key] of [['videoHeader','header'],['videoFooter','footer']])$(id).addEventListener('input',e=>{if(playing)return;state.branding[key]=brandingText(e.target.value,'');save();renderCurrent()});
@@ -84,7 +87,7 @@ $('save').onclick=()=>{save();status('تم حفظ المشروع في هذا ا�
 function safeFileName(){return (state.name||'nibor-motion').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').replace(/[. ]+$/g,'').trim().slice(0,90)||'nibor-motion'}
 function download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
 $('json').onclick=()=>download(new Blob([JSON.stringify({...state,version:APP_VERSION},null,2)],{type:'application/json'}),`${safeFileName()}-v${APP_VERSION}.json`);
-$('import').onclick=()=>$('file').click();$('file').onchange=async e=>{try{if(!e.target.files[0])return;if(!confirm('استيراد ملف JSON سيستبدل المشروع الحالي. هل تريد المتابعة؟'))return;const x=JSON.parse(await e.target.files[0].text());stopSceneAudio();state=cleanProject(x);voiceBlobs.clear();voiceLoadPromise=loadSceneVoices().catch(e=>{status('تعذر تحميل الأصوات: '+e.message)});index=0;clock=state.scenes[0].duration;selectedStickerId=null;save();drawControls();syncBrandingControls();render(1);prewarm();status('تم استيراد المشروع. ملفات الصوت لا تتضمنها نسخة JSON؛ يلزم إعادة ربطها عند نقل المشروع.')}catch(err){status('فشل الاستيراد: '+err.message)}finally{e.target.value=''}};
+$('import').onclick=()=>$('file').click();$('file').onchange=async e=>{try{if(!e.target.files[0])return;if(!confirm('استيراد ملف JSON سيستبدل المشروع الحالي. هل تريد المتابعة؟'))return;const x=JSON.parse(await e.target.files[0].text());stopSceneAudio();state=cleanProject(x);voiceBlobs.clear();voiceLoadPromise=loadSceneVoices().catch(e=>{status('تعذر تحميل الأصوات: '+e.message)});musicLoadPromise=loadMusic().catch(e=>status('تعذّر تحميل موسيقى المشروع: '+e.message));index=0;clock=state.scenes[0].duration;selectedStickerId=null;save();drawControls();syncBrandingControls();render(1);prewarm();status('تم استيراد المشروع. ملفات الصوت لا تتضمنها نسخة JSON؛ يلزم إعادة ربطها عند نقل المشروع.')}catch(err){status('فشل الاستيراد: '+err.message)}finally{e.target.value=''}};
 function initMathEditor(){const field=$('mathfield');if(!customElements.get('math-field')){$('mathHost').hidden=true;status('المحرر المرئي غير متاح حالياً؛ يمكنك استخدام إدخال LaTeX النصي.');return}mathfieldReady=true;try{field.mathVirtualKeyboardPolicy='auto';field.smartMode=true;field.value=state.scenes[index].equation;field.addEventListener('input',()=>{if(fieldSync||playing)return;fieldSync=true;const v=field.value;$('equation').value=v;fieldSync=false;redrawAfterEdit('equation',v)})}catch(e){console.warn(e)}}
 if(customElements.get('math-field'))initMathEditor();else Promise.race([customElements.whenDefined('math-field'),waitForMathEditorTimeout()]).then(()=>{if(customElements.get('math-field'))initMathEditor();else {$('mathHost').hidden=true;status('المحرر المرئي غير متاح؛ استخدم حقل LaTeX النصي.')}}).catch(()=>{});
 function waitForMathEditorTimeout(){return new Promise(resolve=>setTimeout(resolve,7000))}
@@ -92,6 +95,7 @@ document.querySelectorAll('[data-math]').forEach(btn=>btn.addEventListener('clic
 // Mathematical formulas are converted to standalone SVG bitmaps and used by the exact same Canvas compositor for preview and video.
 function likelyMath(s){return /\\[a-zA-Z]+|\^|_|[{}]/.test(s)||/[=+×÷]/.test(s)}
 function mathSVG(latex,color){
+ latex=NM.mathanim.marked(latex,'#f4d96c');
  const wrapper=window.MathJax.tex2svg(latex,{display:true});
  // MathJax outputs a MathML error node for malformed TeX: never treat that as a valid formula.
  if(wrapper.querySelector('merror,[data-mjx-error],[data-mml-node="merror"],mjx-merror')||/\\(s|left\\\{|right\\\})\\b/.test(latex))throw Error('صياغة LaTeX غير صحيحة');
@@ -130,20 +134,20 @@ async function warmMath(raw,color=formulaColor()){
  finally{entry.pending=null;trimMathCache();renderCurrent();updateMathStatus();}})();
  return entry.pending;
 }
-function usedMathPairs(){return state.scenes.flatMap(s=>[[s.equation,formulaColor()],[s.answer,answerFormulaColor(s)]]).filter(([v])=>String(v||'').trim())}
+function usedMathPairs(){return state.scenes.flatMap((s,i)=>[...NM.mathanim.variants(s,formulaColor(),state.captions.highlight),...(s.equationAnim==='fromPrevious'&&i>0?[[NM.mathanim.plain(state.scenes[i-1].equation),formulaColor()]]:[]),[s.answer,answerFormulaColor(s)]]).filter(([v])=>String(v||'').trim())}
 function updateMathStatus(){
  const failed=usedMathPairs().find(([raw,color])=>mathCache.get(mathKey(raw,color))?.error);
  if(failed){const entry=mathCache.get(mathKey(...failed));$('mathWarning').hidden=false;$('mathWarning').textContent='تنبيه: توجد معادلة لم تُرسم بشكل صحيح: '+failed[0]+' — '+entry.error+'؛ صحح LaTeX قبل التصدير.';}
  else $('mathWarning').hidden=true;
 }
 function prewarm(){const pending=usedMathPairs().map(([raw,color])=>warmMath(raw,color));trimMathCache();return Promise.all(pending)}
-function renderCurrent(){if(!playing){const at=atTime(clock);render(at.index===index?at.progress:1)}}
+function renderCurrent(){if(!playing){const at=atTime(clock);render(at.index===index?at.progress:1,{guides:true})}}
 // Word wrapping respects manual newlines, RTL direction, and line count limits.
 function measureTextBlock(ctx,str,maxWidth,size,weight=650,maxLines=2,minFont=24,maxHeight=Infinity){
  ctx.save();
  const paragraphs=String(str||'').split('\n');
  function wrap(fontSize){
-  ctx.font=`${weight} ${fontSize}px system-ui, sans-serif`;
+  ctx.font=NM.font(weight>=700?'heading':'body',weight,fontSize);
   const result=[];
   for(const paragraph of paragraphs){
    if(!paragraph.trim()){result.push('');continue}
@@ -166,7 +170,7 @@ function measureTextBlock(ctx,str,maxWidth,size,weight=650,maxLines=2,minFont=24
 }
 function text(ctx,str,x,y,maxWidth,size,color,weight=650,dir='rtl',maxLines=2,minFont=24,maxHeight=Infinity){
  const layout=measureTextBlock(ctx,str,maxWidth,size,weight,maxLines,minFont,maxHeight);
- ctx.save();ctx.fillStyle=color;ctx.direction=dir;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${weight} ${layout.size}px system-ui, sans-serif`;
+ ctx.save();ctx.fillStyle=color;ctx.direction=dir;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=NM.font(weight>=700?'heading':'body',weight,layout.size);
  let yy=y-(layout.rows.length-1)*layout.lineHeight/2;
  for(const line of layout.rows){ctx.fillText(line,x,yy);yy+=layout.lineHeight}
  ctx.restore();return layout;
@@ -198,45 +202,52 @@ function backdropTextColor(shape,bg,defaultColor){
  return ['#193c5d'].includes(bg)?'#ffffff':'#173a5c';
 }
 function fade(ctx,p,start,fn){const fadeTime=.09;const alpha=Math.max(0,Math.min(1,(p-start)/fadeTime));if(alpha<=0)return;ctx.save();ctx.globalAlpha*=alpha;fn();ctx.restore()}
-function render(p=1){
+function render(p=1,options={guides:!exporting}){
  const scene=state.scenes[index],w=CW,h=CH,theme=state.theme;
  const fg=theme==='dark'||theme==='blackboard'?'#f4f7ff':'#173a5c';
  ctx.save();ctx.setTransform(1,0,0,1,0,0);
  ctx.fillStyle=theme==='blackboard'?'#143d34':theme==='dark'?'#17253a':theme==='clean'?'#ffffff':'#faf6ea';ctx.fillRect(0,0,w,h);
  if(theme==='notebook'){ctx.strokeStyle='#dadfdd';ctx.lineWidth=2;for(let y=62;y<h;y+=74){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}}
- if(state.branding.showHeader&&state.branding.header)text(ctx,state.branding.header,540,145,860,state.branding.headerSize,fg,500,/[\u0600-\u06ff]/.test(state.branding.header)?'rtl':'ltr');
+ const absoluteTime=sceneStart(index)+state.scenes[index].duration*Math.max(0,Math.min(1,p));
+ const isHook=NM.overlays.hook(ctx,scene,p,theme,text);
+ if(!isHook&&state.branding.showHeader&&state.branding.header)text(ctx,state.branding.header,540,145,860,state.branding.headerSize,fg,500,/[\u0600-\u06ff]/.test(state.branding.header)?'rtl':'ltr');
  const titleY=h*scene.titleY/100,questionY=h*scene.questionY/100,equationY=h*scene.equationY/100,answerY=h*scene.answerY/100;
- fade(ctx,p,0,()=>{
+ if(!isHook)fade(ctx,p,0,()=>{
   const titleLayout=measureTextBlock(ctx,scene.title,820,scene.titleSize,800,2,30,150);
   drawTextBackdrop(ctx,scene.titleBg,540,titleY,890,Math.max(145,titleLayout.height+20),scene.titleBgColor);
   text(ctx,scene.title,540,titleY,820,scene.titleSize,backdropTextColor(scene.titleBg,scene.titleBgColor,fg),800,'rtl',2,30,150);
  });
- fade(ctx,p,scene.qAt/100,()=>{
+ if(!isHook)fade(ctx,p,scene.qAt/100,()=>{
   const questionLayout=measureTextBlock(ctx,scene.question,830,scene.questionSize,600,4,30,420);
   drawTextBackdrop(ctx,scene.questionBg,540,questionY,900,Math.max(110,questionLayout.height+42),scene.questionBgColor);
   text(ctx,scene.question,540,questionY,830,scene.questionSize,backdropTextColor(scene.questionBg,scene.questionBgColor,fg),600,'rtl',4,30,420);
  });
- fade(ctx,p,scene.eAt/100,()=>math(ctx,scene.equation,540,equationY,865*scene.equationScale/100,175*scene.equationScale/100,fg));
- if(scene.answer)fade(ctx,p,scene.aAt/100,()=>{
+ if(!isHook)NM.mathanim.draw(ctx,scene,p,index>0?state.scenes[index-1]:null,(tex,color)=>math(ctx,tex,540,equationY,865*scene.equationScale/100,175*scene.equationScale/100,color),fg,state.captions.highlight);
+ if(!isHook&&scene.answer)fade(ctx,p,scene.aAt/100,()=>{
   drawTextBackdrop(ctx,scene.answerBg,540,answerY,830,Math.max(190,190*scene.answerScale/100),scene.answerBgColor);
   math(ctx,scene.answer,540,answerY,775*scene.answerScale/100,150*scene.answerScale/100,answerFormulaColor(scene));
  });
- if(state.branding.showFooter&&state.branding.footer)text(ctx,state.branding.footer,540,1795,860,state.branding.footerSize,fg,400,/[\u0600-\u06ff]/.test(state.branding.footer)?'rtl':'ltr');
- drawStickers(ctx,scene,p);ctx.restore();updateSeek();
+ if(!isHook&&state.branding.showFooter&&state.branding.footer)text(ctx,state.branding.footer,540,1795,860,state.branding.footerSize,fg,400,/[\u0600-\u06ff]/.test(state.branding.footer)?'rtl':'ltr');
+ NM.overlays.progress(ctx,state.overlays,absoluteTime,seconds());
+ NM.captions.draw(ctx,state,subtitleTimeline,absoluteTime);
+ drawStickers(ctx,scene,p);
+ if(options.guides){NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
+ ctx.restore();updateSeek();
 }
 
 const wait=ms=>new Promise(res=>setTimeout(res,ms));
-async function runPlayback(){if(playing)return;setBusy(true);const token=++playToken;clock=0;let previous=-1;const start=performance.now();try{while(token===playToken&&clock<seconds()){clock=Math.min(seconds(),(performance.now()-start)/1000);const at=atTime(Math.min(clock,seconds()-.001));if(at.index!==previous){stopSceneAudio();previous=at.index;index=at.index;drawControls();playSceneAudio(state.scenes[index].id).catch(()=>{});}render(at.progress);await wait(33)}if(token===playToken){clock=seconds();index=state.scenes.length-1;drawControls();render(1)}}finally{stopSceneAudio();setBusy(false)}}
-$('play').onclick=runPlayback;$('stop').onclick=()=>{playToken++;stopSceneAudio();if(exporting){status('جارٍ إلغاء التصدير…');return}setBusy(false);status('تم إيقاف التشغيل')};
-$('png').onclick=()=>{$('stage').toBlob(blob=>{if(blob)download(blob,'nibor-motion-scene.png');else status('فشل إنشاء صورة PNG')},'image/png')};
+async function runPlayback(){if(playing)return;setBusy(true);const token=++playToken;clock=0;let previous=-1;try{await startPreviewMix();}catch(e){status('تعذّر تشغيل المؤثرات: '+e.message)}if(token!==playToken){stopPreviewMix();setBusy(false);return}const start=performance.now();try{while(token===playToken&&clock<seconds()){clock=Math.min(seconds(),(performance.now()-start)/1000);const at=atTime(Math.min(clock,seconds()-.001));if(at.index!==previous){stopSceneAudio();previous=at.index;index=at.index;drawControls();/* voice scheduled by audiomix */}render(at.progress,{guides:true});await wait(33)}if(token===playToken){clock=seconds();index=state.scenes.length-1;drawControls();render(1)}}finally{stopSceneAudio();stopPreviewMix();setBusy(false)}}
+$('play').onclick=runPlayback;$('stop').onclick=()=>{playToken++;stopSceneAudio();stopPreviewMix();if(exporting){status('جارٍ إلغاء التصدير…');return}setBusy(false);status('تم إيقاف التشغيل')};
+$('png').onclick=async()=>{await NM.fonts.ready(status);const at=atTime(clock);render(at.index===index?at.progress:1,{guides:false});$('stage').toBlob(blob=>{if(blob)download(blob,`${safeFileName()}-v${APP_VERSION}-scene.png`);else status('فشل إنشاء صورة PNG');renderCurrent()},'image/png')};
 async function exportVideo(){
  if(playing)return;
  setBusy(true);exporting=true;
  const token=++playToken;
  const canvas=$('stage'),chunks=[],sources=[];
- let rec=null,ac=null,stream=null,videoStream=null,complete=null,cancelled=false,failed=false,recordingStarted=false;
+ let rec=null,ac=null,stream=null,videoStream=null,complete=null,cancelled=false,failed=false,recordingStarted=false,preparedAudio=null,audioDestination=null;
  try{
-  await voiceLoadPromise;
+  if(window.AudioContext||window.webkitAudioContext){ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume().catch(()=>{});}
+  await voiceLoadPromise;await NM.fonts.ready(status);await musicLoadPromise;
   if(token!==playToken){cancelled=true;return}
   const missingVoices=state.scenes.map((scene,i)=>({scene,i})).filter(x=>x.scene.speechText.trim()&&!voiceBlobs.has(x.scene.id));
   if(missingVoices.length){const ids=missingVoices.map(x=>x.i+1).join('، ');throw Error('لا يوجد صوت محفوظ للمشاهد: '+ids+'. الاستماع التجريبي لا يُضاف إلى الفيديو.')}
@@ -250,18 +261,21 @@ async function exportVideo(){
   if(missing.length)throw Error('تعذر تجهيز بعض المعادلات، عالجها قبل التصدير');
   videoStream=canvas.captureStream(30);stream=videoStream;
   const voiceEntries=state.scenes.map((s,i)=>({s,i,blob:voiceBlobs.get(s.id)})).filter(x=>x.blob);
-  if(voiceEntries.length){
-   ac=new (window.AudioContext||window.webkitAudioContext)();const dest=ac.createMediaStreamDestination();
-   for(const {s,i,blob} of voiceEntries){const buffer=await ac.decodeAudioData(await blob.arrayBuffer());const src=ac.createBufferSource();src.buffer=buffer;const gain=ac.createGain();gain.gain.value=s.voiceVolume;src.connect(gain);gain.connect(dest);sources.push({src,start:sceneStart(i),length:Math.min(s.duration,buffer.duration)})}
+  const hasGeneratedAudio=voiceEntries.length||musicBlob||NM.audiomix.timeline(state,voiceBlobs).events.length;
+  let mixed=null;
+  if(hasGeneratedAudio){
+   if(!ac)throw Error('Web Audio غير مدعوم على هذا الجهاز');const dest=ac.createMediaStreamDestination();
+   preparedAudio=await NM.audiomix.prepare(ac,state,voiceBlobs,musicBlob);audioDestination=dest;
    if(token!==playToken){cancelled=true;return}
    await ac.resume();stream=new MediaStream([...videoStream.getVideoTracks(),...dest.stream.getAudioTracks()]);
+   // The sources are started only after MediaRecorder begins, avoiding early audio.
   }
   rec=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:8000000});
   rec.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
   complete=new Promise((resolve,reject)=>{rec.onstop=resolve;rec.onerror=e=>reject(e.error||Error('خطأ في تسجيل الفيديو'))});
-  rec.start(1000);recordingStarted=true;render(0);
-  const startTime=performance.now(),audioStart=ac?.currentTime+.08;
-  for(const a of sources)a.src.start(audioStart+a.start,0,a.length);
+  index=0;clock=0;rec.start(1000);recordingStarted=true;render(0);
+  const startTime=performance.now();
+  if(preparedAudio){const m=NM.audiomix.startPrepared(ac,audioDestination,state,preparedAudio,ac.currentTime+.07);for(const src of m.sources)sources.push({src});}
   const total=seconds();status('جارٍ تصدير الفيديو مع صوت كل مشهد حسب توقيته…');
   while(token===playToken&&(performance.now()-startTime)/1000<total){clock=Math.min(total,(performance.now()-startTime)/1000);const at=atTime(Math.min(clock,total-.001));if(index!==at.index){index=at.index;drawControls()}render(at.progress);await wait(30)}
   if(token!==playToken){cancelled=true;return}
@@ -286,17 +300,17 @@ async function exportVideo(){
  }
 }
 $('export').onclick=exportVideo;
-function initialize(){save();index=0;clock=state.scenes[0].duration;drawControls();syncBrandingControls();render(1);prewarm();updateMathStatus();if(!window.MathJax)status('الرياضيات حالياً بنص احتياطي. يتطلب إخراج المعادلات الاتصال بالإنترنت.');}
+async function initialize(){await NM.fonts.ready(status);save();index=0;clock=state.scenes[0].duration;drawControls();syncBrandingControls();render(1);prewarm();updateMathStatus();if(!window.MathJax)status('الرياضيات حالياً بنص احتياطي. يتطلب إخراج المعادلات الاتصال بالإنترنت.');}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 // Stickers and drag interactions, coordinates normalized to the 1080x1920 master canvas.
 function currentSticker(){return state.scenes[index].stickers?.find(s=>s.id===selectedStickerId)}
-function refreshStickers(){const el=$('stickerSelect');if(!el)return;el.replaceChildren();const none=document.createElement('option');none.value='';none.textContent='اختر ملصقاً';el.append(none);for(const s of state.scenes[index].stickers||[]){let opt=document.createElement('option');opt.value=s.id;opt.textContent=s.icon+' '+Math.round(s.x*100)+'% / '+Math.round(s.y*100)+'%';el.append(opt)}if(!currentSticker())selectedStickerId=null;el.value=selectedStickerId||'';const s=currentSticker();for(const k of ['Size','Start','End']){const id='sticker'+k;$(id).disabled=!s;$(id).value=s?s[k.toLowerCase()]:({Size:140,Start:10,End:95}[k]);$(id+'Out').textContent=$(id).value+(k==='Size'?'px':'%')}$('stickerAnimation').disabled=!s;$('stickerAnimation').value=s?.animation||'pop';$('removeSticker').disabled=!s;const quick=$('deleteSelectedSticker');if(quick){quick.disabled=!s;quick.textContent=s?'حذف الملصق المحدد '+s.icon:'حذف الملصق المحدد'}}
+function refreshStickers(){const el=$('stickerSelect');if(!el)return;el.replaceChildren();const none=document.createElement('option');none.value='';none.textContent='اختر ملصقاً';el.append(none);for(const s of state.scenes[index].stickers||[]){let opt=document.createElement('option');opt.value=s.id;opt.textContent=s.icon+' '+Math.round(s.x*100)+'% / '+Math.round(s.y*100)+'%';el.append(opt)}if(!currentSticker())selectedStickerId=null;el.value=selectedStickerId||'';const s=currentSticker();for(const k of ['Size','Start','End']){const id='sticker'+k;$(id).disabled=!s;$(id).value=s?s[k.toLowerCase()]:({Size:140,Start:10,End:95}[k]);$(id+'Out').textContent=$(id).value+(k==='Size'?'px':'%')}$('stickerEffect').disabled=!s;$('stickerEffect').value=s?.effect||'none';$('stickerAnimation').disabled=!s;$('stickerAnimation').value=s?.animation||'pop';$('removeSticker').disabled=!s;const quick=$('deleteSelectedSticker');if(quick){quick.disabled=!s;quick.textContent=s?'حذف الملصق المحدد '+s.icon:'حذف الملصق المحدد'}}
 function mutateSticker(key,v){const s=currentSticker();if(!s||playing)return;s[key]=['size','start','end'].includes(key)?Number(v):v;if(s.start>=s.end){if(key==='start')s.end=Math.min(100,s.start+5);else s.start=Math.max(0,s.end-5)}save();refreshStickers();renderCurrent()}
 for(const b of document.querySelectorAll('[data-sticker]'))b.onclick=()=>{if(playing)return;const s=cleanSticker({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),icon:b.dataset.sticker,x:.5,y:.37,start:0,end:100,size:145});state.scenes[index].stickers.push(s);selectedStickerId=s.id;save();refreshStickers();renderCurrent();status('أضف الملصق واسحبه داخل المعاينة')};
 $('deleteSelectedSticker').onclick=()=>$('removeSticker').click();
 $('stickerSelect').onchange=e=>{selectedStickerId=e.target.value||null;refreshStickers();renderCurrent()};$('removeSticker').onclick=()=>{if(!currentSticker())return;if(!confirm('هل تريد حذف هذا الملصق؟'))return;state.scenes[index].stickers=state.scenes[index].stickers.filter(s=>s.id!==selectedStickerId);selectedStickerId=null;save();refreshStickers();renderCurrent()};
-for(const [id,key] of [['stickerSize','size'],['stickerStart','start'],['stickerEnd','end'],['stickerAnimation','animation']])$(id).addEventListener(id==='stickerAnimation'?'change':'input',e=>mutateSticker(key,e.target.value));
+for(const [id,key] of [['stickerSize','size'],['stickerStart','start'],['stickerEnd','end'],['stickerAnimation','animation'],['stickerEffect','effect']])$(id).addEventListener(['stickerAnimation','stickerEffect'].includes(id)?'change':'input',e=>mutateSticker(key,e.target.value));
 function drawStickers(c,scene,p){for(const s of scene.stickers||[]){const start=s.start/100,end=s.end/100;if(p<start||p>end)continue;const fade=Math.min(1,Math.max(0,(p-start)/.1),end>=1?1:Math.max(0,(end-p)/.08));const x=s.x*CW,y=s.y*CH;c.save();c.globalAlpha*=s.animation==='static'?1:Math.max(0,fade);c.translate(x,y);const t=Math.min(1,Math.max(0,(p-start)/.15));if(s.animation==='pop')c.scale(.45+.55*(1-Math.pow(1-t,3)),.45+.55*(1-Math.pow(1-t,3)));if(s.animation==='spin')c.rotate((1-t)*-.55);c.textAlign='center';c.textBaseline='middle';c.font=`${s.size}px 'Apple Color Emoji','Segoe UI Emoji',system-ui`;c.fillText(s.icon,0,0);c.restore()}}
 let dragSticker=null;
 function stageCoords(e){const r=$('stage').getBoundingClientRect();return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
@@ -311,9 +325,9 @@ function voiceKey(sceneId){return 'project:'+projectKey()+':'+sceneId}
 function soundDB(){return new Promise((resolve,reject)=>{const r=indexedDB.open('nibor-motion-scene-voices',1);r.onupgradeneeded=()=>r.result.createObjectStore('clips');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
 async function dbAudio(op,key,blob){const db=await soundDB();try{return await new Promise((resolve,reject)=>{const tx=db.transaction('clips',op==='get'?'readonly':'readwrite'),s=tx.objectStore('clips');let req;if(op==='get')req=s.get(key);else if(op==='put')req=s.put(blob,key);else req=s.delete(key);if(op==='get')req.onsuccess=()=>resolve(req.result);tx.oncomplete=()=>op!=='get'&&resolve();tx.onerror=()=>reject(tx.error);req.onerror=()=>reject(req.error)})}finally{db.close()}}
 async function deleteSceneAudio(id){await dbAudio('delete',voiceKey(id))}
-async function loadSceneVoices(){const pid=state.projectId,scenes=[...state.scenes];voiceBlobs.clear();for(const s of scenes){const b=await dbAudio('get','project:'+pid+':'+s.id);if(state.projectId!==pid)return;if(b)voiceBlobs.set(s.id,b)}if(state.projectId===pid)syncSceneVoiceUI()}
+async function loadSceneVoices(){const pid=state.projectId,scenes=[...state.scenes];voiceBlobs.clear();for(const s of scenes){const b=await dbAudio('get','project:'+pid+':'+s.id);if(state.projectId!==pid)return;if(b)voiceBlobs.set(s.id,b)}if(state.projectId===pid){syncSceneVoiceUI();rebuildTimeline()}}
 function stopSceneAudio(){previewVoice?.pause();previewVoice=null;if(previewVoiceUrl){URL.revokeObjectURL(previewVoiceUrl);previewVoiceUrl=null;}if(window.speechSynthesis)window.speechSynthesis.cancel()}
-function setSceneAudio(blob,sid=index,persist=true){const id=typeof sid==='number'?state.scenes[sid].id:sid;if(!blob||!blob.size)return;voiceBlobs.set(id,blob);if(persist)dbAudio('put',voiceKey(id),blob).catch(e=>status('تعذر حفظ الصوت محلياً: '+e.message));if(state.scenes[index].id===id)syncSceneVoiceUI();}
+function setSceneAudio(blob,sid=index,persist=true){const id=typeof sid==='number'?state.scenes[sid].id:sid;if(!blob||!blob.size)return;voiceBlobs.set(id,blob);if(persist)dbAudio('put',voiceKey(id),blob).catch(e=>status('تعذر حفظ الصوت محلياً: '+e.message));if(state.scenes[index].id===id)syncSceneVoiceUI();rebuildTimeline();}
 function syncSceneVoiceUI(){const s=state.scenes[index],blob=voiceBlobs.get(s.id);$('speechText').value=s.speechText;$('speechRate').value=s.speechRate;$('speechRateOut').textContent=s.speechRate.toFixed(1)+'×';$('ttsVoice').value=s.ttsVoice;$('audioVolume').value=Math.round(s.voiceVolume*100);$('audioVolumeOut').textContent=Math.round(s.voiceVolume*100)+'%';$('autoDuration').checked=s.autoDuration;const player=$('audioPreview');player.pause();if(player.dataset.url)URL.revokeObjectURL(player.dataset.url);if(blob){player.dataset.url=URL.createObjectURL(blob);player.src=player.dataset.url;$('audioStatus').textContent='✅ ملف صوتي محفوظ لهذا المشهد: '+(blob.size/1024).toFixed(0)+'KB — سيدخل في الفيديو عند التصدير.';}else{delete player.dataset.url;player.removeAttribute('src');player.load();$('audioStatus').textContent=s.speechText.trim()?'⚠ النص مكتوب لكن لم يتم توليد ملف صوتي. الاستماع التجريبي لا يُضاف إلى الفيديو.':'لا يوجد ملف صوتي لهذا المشهد بعد.'}}
 function updateSceneVoice(key,val){if(playing)return;state.scenes[index][key]=val;save()}
 // Free on-device production path: Apple Shortcuts generates an actual audio file.
@@ -362,11 +376,30 @@ if('speechSynthesis'in window){populateBrowserVoices();speechSynthesis.onvoicesc
 $('speakPreview').onclick=()=>{if(!('speechSynthesis'in window)){status('الأصوات المحلية غير مدعومة هنا');return}stopSceneAudio();const s=state.scenes[index];if(!s.speechText.trim()){status('اكتب نص الشرح أولاً');return}const utterance=new SpeechSynthesisUtterance(s.speechText);utterance.lang='ar';utterance.rate=s.speechRate;utterance.voice=speechSynthesis.getVoices().find(v=>v.voiceURI===$('speechVoice').value)||null;speechSynthesis.speak(utterance)};
 $('stopSpeaking').onclick=stopSceneAudio;
 function audioSeconds(blob){return new Promise((resolve,reject)=>{const a=document.createElement('audio');const u=URL.createObjectURL(blob);a.preload='metadata';a.onloadedmetadata=()=>{const dur=a.duration;URL.revokeObjectURL(u);Number.isFinite(dur)?resolve(dur):reject(Error('مدة الصوت غير معروفة'))};a.onerror=()=>{URL.revokeObjectURL(u);reject(Error('تعذر قراءة مدة الصوت'))};a.src=u})}
-async function fitSceneAudio(blob,id){const s=state.scenes.find(s=>s.id===id);if(!s||!s.autoDuration)return;try{const dur=await audioSeconds(blob);if(dur>s.duration){s.duration=Math.min(MAX_SCENE_DURATION,Math.ceil((dur+.4)*2)/2);save();if(state.scenes[index].id===id){clock=sceneStart(index)+s.duration;drawControls();render(1)}status('عُدلت مدة المشهد لتناسب التعليق الصوتي: '+s.duration+' ثانية')}}catch(e){status('أضيف الصوت ولكن تعذر حساب مدته آلياً')}}
+async function fitSceneAudio(blob,id){const s=state.scenes.find(s=>s.id===id);if(!s)return;try{const dur=await audioSeconds(blob);s.voiceDuration=bounded(dur,0,120,0);save();if(!s.autoDuration){save();return;}if(dur>s.duration){s.duration=Math.min(MAX_SCENE_DURATION,Math.ceil((dur+.4)*2)/2);save();if(state.scenes[index].id===id){clock=sceneStart(index)+s.duration;drawControls();render(1)}status('عُدلت مدة المشهد لتناسب التعليق الصوتي: '+s.duration+' ثانية')}}catch(e){status('أضيف الصوت ولكن تعذر حساب مدته آلياً')}}
 $('audioFile').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;const id=state.scenes[index].id;if(file.size>30*1024*1024){status('الملف الصوتي أكبر من 30MB');return}setSceneAudio(file,id);await fitSceneAudio(file,id);e.target.value=''};
 $('recordAudio').onclick=async()=>{if(playing||activeRecorder)return;const id=state.scenes[index].id;try{micStream=await navigator.mediaDevices.getUserMedia({audio:true});const types=['audio/mp4','audio/webm;codecs=opus','audio/webm'];const mime=types.find(t=>MediaRecorder.isTypeSupported(t));const rec=new MediaRecorder(micStream,mime?{mimeType:mime}:{});const chunks=[];activeRecorder=rec;rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.onstop=async()=>{micStream?.getTracks().forEach(t=>t.stop());micStream=null;activeRecorder=null;$('recordAudio').disabled=false;$('stopAudio').disabled=true;if(chunks.length){const blob=new Blob(chunks,{type:rec.mimeType||'audio/webm'});setSceneAudio(blob,id);await fitSceneAudio(blob,id)}};rec.start(350);$('recordAudio').disabled=true;$('stopAudio').disabled=false;$('audioStatus').textContent='● يجري تسجيل صوت هذا المشهد…'}catch(err){status('تعذر التسجيل: '+err.message);micStream?.getTracks().forEach(t=>t.stop());activeRecorder=null}};
 $('stopAudio').onclick=()=>{if(activeRecorder?.state==='recording')activeRecorder.stop()};
-$('removeAudio').onclick=()=>{if(playing)return;const id=state.scenes[index].id;voiceBlobs.delete(id);deleteSceneAudio(id).catch(()=>{});syncSceneVoiceUI()};
+$('removeAudio').onclick=()=>{if(playing)return;const id=state.scenes[index].id;voiceBlobs.delete(id);state.scenes[index].voiceDuration=0;save();deleteSceneAudio(id).catch(()=>{});syncSceneVoiceUI()};
 async function playSceneAudio(id){const blob=voiceBlobs.get(id);if(!blob)return;previewVoiceUrl=URL.createObjectURL(blob);const a=new Audio(previewVoiceUrl);previewVoice=a;a.volume=state.scenes.find(s=>s.id===id)?.voiceVolume??1;try{await a.play()}catch(e){status('لم يسمح المتصفح بتشغيل صوت المشهد تلقائياً')}finally{a.onended=()=>{if(previewVoice===a)stopSceneAudio()}}}
 $('generateSpeech').onclick=async()=>{const s=state.scenes[index],id=s.id,endpoint=$('ttsEndpoint').value.trim();if(!s.speechText.trim()){status('اكتب النص الصوتي أولاً');return}if(!endpoint||!endpoint.startsWith('https://')){status('أضف رابط خدمة الصوت الآمنة أولاً. معاينة صوت الجهاز متاحة دون خادم.');return}const b=$('generateSpeech');b.disabled=true;status('جارٍ طلب الملف الصوتي…');try{const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:s.speechText,voice:s.ttsVoice,speed:s.speechRate})});if(!r.ok)throw Error('HTTP '+r.status+' '+(await r.text()).slice(0,180));const type=r.headers.get('content-type')||'';if(!type.startsWith('audio/'))throw Error('الخدمة لم تُرجع ملفاً صوتياً');const blob=await r.blob();if(blob.size>30*1024*1024||!blob.size)throw Error('ملف الصوت غير صالح أو كبير جداً');setSceneAudio(blob,id);await fitSceneAudio(blob,id);status('تم توليد الصوت وحفظه للمشهد. الصوت مولّد بالذكاء الاصطناعي.')}catch(e){status('لم يتم توليد الصوت: '+e.message)}finally{b.disabled=false}};
+
+// v0.7.0 extension module bindings — all settings are sanitized on import.
+let musicBlob=null,musicLoadPromise=Promise.resolve(),previewMix=null;
+const musicKey=()=> 'project:'+state.projectId+':music';
+async function loadMusic(){musicBlob=await dbAudio('get',musicKey())||null;showMusicState()}
+function showMusicState(){$('musicStatus').textContent=musicBlob?'تم حفظ الموسيقى للمشروع':'لا توجد موسيقى مضافة'}
+function updateExtra(k,v){if(playing)return;const path=k.split('.');let target=state;for(let i=0;i<path.length-1;i++)target=target[path[i]];target[path.at(-1)]=v;state=cleanProject(state);NM.project=state;save();renderCurrent();syncExtraControls()}
+function syncExtraControls(){if(!$('captionEnable'))return;const s=state.scenes[index];for(const [id,v] of Object.entries({headingFont:state.fonts.heading,bodyFont:state.fonts.body,captionEnable:state.captions.enabled,captionSize:state.captions.size,captionY:state.captions.y,captionStyle:state.captions.style,captionHighlight:state.captions.highlight,equationAnim:s.equationAnim,equationAnimDuration:s.equationAnimDuration,highlightAt:s.highlightAt,sceneType:s.sceneType,resultEffect:s.resultEffect,progressEnable:state.overlays.progress,progressColor:state.overlays.progressColor,safeGuide:state.overlays.safeGuide,musicVolume:state.audio.musicVolume,sceneEffect:state.audio.sceneEffect})){const e=$(id);if(e){if(e.type==='checkbox')e.checked=!!v;else e.value=v}}}
+const extras={headingFont:'fonts.heading',bodyFont:'fonts.body',captionEnable:'captions.enabled',captionSize:'captions.size',captionY:'captions.y',captionStyle:'captions.style',captionHighlight:'captions.highlight',equationAnim:'scenes.equationAnim',equationAnimDuration:'scenes.equationAnimDuration',highlightAt:'scenes.highlightAt',sceneType:'scenes.sceneType',resultEffect:'scenes.resultEffect',progressEnable:'overlays.progress',progressColor:'overlays.progressColor',safeGuide:'overlays.safeGuide',musicVolume:'audio.musicVolume',sceneEffect:'audio.sceneEffect'};
+for(const [id,path] of Object.entries(extras))$(id).addEventListener(['SELECT','INPUT'].includes($(id).tagName)&&!['range','checkbox','color'].includes($(id).type)?'change':'input',async e=>{const value=$(id).type==='checkbox'?e.target.checked:['range','number'].includes($(id).type)?Number(e.target.value):e.target.value;if(path.startsWith('scenes.')){state.scenes[index][path.split('.')[1]]=value;state.scenes[index]=cleanScene(state.scenes[index]);save();scheduleMathWarm();renderCurrent();syncExtraControls()}else{updateExtra(path,value);if(path.startsWith('fonts.')){await NM.fonts.ready(status);renderCurrent()}if(path==='overlays.safeGuide')renderCurrent()}});
+$('exportSRT').onclick=()=>{rebuildTimeline();download(new Blob([NM.captions.srt(subtitleTimeline)],{type:'text/plain;charset=utf-8'}),`${safeFileName()}-v${APP_VERSION}.srt`)};
+$('addHook').onclick=()=>{if(playing)return;const choice=prompt('اختر نص الخطاف أو اكتب عنواناً جديداً:\n1. '+NM.overlays.ideas[0]+'\n2. '+NM.overlays.ideas[1]+'\n3. '+NM.overlays.ideas[2], '3');if(choice===null)return;const n=Number(choice),label=[1,2,3].includes(n)?NM.overlays.ideas[n-1]:choice.slice(0,160);state.scenes.unshift(cleanScene({title:label,sceneType:'hook',duration:2}));index=0;clock=2;save();drawControls();render(1)};
+$('musicFile').onchange=async e=>{const blob=e.target.files?.[0];if(!blob)return;if(blob.size>30*1024*1024){status('حجم الموسيقى يتجاوز 30 ميغابايت');return}musicBlob=blob;try{await dbAudio('put',musicKey(),blob);showMusicState();status('تم حفظ موسيقى المشروع')}catch(err){status('تعذّر حفظ الموسيقى: '+err.message)}e.target.value=''};
+$('removeMusic').onclick=async()=>{if(!confirm('هل تريد حذف الموسيقى من هذا المشروع؟'))return;musicBlob=null;await dbAudio('delete',musicKey());showMusicState()};
+// A preview mix uses the same precomputed event scheduler as export.
+async function startPreviewMix(){const ac=new (window.AudioContext||window.webkitAudioContext)();const resume=ac.resume().catch(()=>{});await voiceLoadPromise;await musicLoadPromise;if(!musicBlob&&!voiceBlobs.size&&!NM.audiomix.timeline(state,voiceBlobs).events.length){await ac.close();return}const dest=ac.createGain();dest.connect(ac.destination);try{const prepared=await NM.audiomix.prepare(ac,state,voiceBlobs,musicBlob);await resume;const mix=NM.audiomix.startPrepared(ac,dest,state,prepared,ac.currentTime+.09);previewMix={ac,sources:mix.sources}}catch(err){await ac.close();status('تعذّر تشغيل المؤثرات: '+err.message)}}
+function stopPreviewMix(){if(!previewMix)return;for(const source of previewMix.sources)try{source.stop()}catch(e){}previewMix.ac.close().catch(()=>{});previewMix=null}
+musicLoadPromise=loadMusic().catch(e=>status('تعذّر تحميل الموسيقى: '+e.message));
+
 initialize();voiceLoadPromise=loadSceneVoices().catch(e=>{status('تعذر قراءة ملفات الصوت المحفوظة: '+e.message)});

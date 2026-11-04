@@ -25,3 +25,5 @@
 .type-control-grid input[type=range]{width:100%;accent-color:#2879bc}.typography-panel>button{margin:12px 0 0;width:100%}
 .preview-sticker-actions{justify-content:center;margin:3px auto 10px}.preview-sticker-actions button{max-width:340px}
 @media(max-width:690px){.type-control-grid{grid-template-columns:1fr}}
+
+.nm-settings{border:1px solid #ccd9e4;border-radius:13px;padding:12px;margin:13px 0;background:#f7fafc;max-width:100%}.nm-settings summary{cursor:pointer;font-weight:750;padding:10px 4px;min-height:44px}.nm-settings label{display:block;margin:10px 0 6px}.nm-settings input:not([type=checkbox]),.nm-settings select{width:100%;min-height:44px}.nm-settings button{min-height:44px}.nm-settings input[type=color]{height:48px}.nm-settings input[type=checkbox]{width:20px;height:20px}.nm-settings p{line-height:1.65}button,[role=button],select{min-height:44px}#stage{touch-action:none}

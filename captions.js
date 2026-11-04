@@ -1,0 +1,16 @@
+'use strict';
+window.NM=window.NM||{};
+(function(NM){
+ const clamp=(n,a,b,d)=>Number.isFinite(Number(n))?Math.max(a,Math.min(b,Number(n))):d;
+ const settings=x=>({enabled:!!x?.enabled,size:clamp(x?.size,36,72,48),y:clamp(x?.y,70,92,82),style:['box','stroke','none'].includes(x?.style)?x.style:'box',highlight:/^#[0-9a-fA-F]{6}$/.test(x?.highlight||'')?x.highlight:'#f4d96c'});
+ function chunks(src){const words=String(src||'').trim().split(/\s+/).filter(Boolean),list=[];let row=[];for(const word of words){row.push(word);if(row.length>=3&&(/[،.؟!:؛]$/.test(word)||row.length>=7)){list.push(row);row=[]}}if(row.length){if(row.length<3&&list.length&&list[list.length-1].length+row.length<=7)list[list.length-1].push(...row);else list.push(row)}return list}
+ function schedule(project,hasVoice){const result=[];let at=0;for(const s of project.scenes){const parts=chunks(s.speechText);const start=hasVoice(s.id)?0:.05*s.duration;const duration=hasVoice(s.id)?Math.min(s.duration,s.voiceDuration||s.duration):s.duration*.9;const chars=parts.reduce((a,p)=>a+p.join(' ').length,0)||1;let cursor=at+start;for(const words of parts){let d=duration*(words.join(' ').length/chars);result.push({scene:s.id,start:cursor,end:Math.min(at+s.duration,cursor+d),words});cursor+=d}at+=s.duration}return result}
+ function select(schedule,time){return schedule.find(x=>time>=x.start&&time<x.end)||null}
+ function draw(c,project,entries,time,force=false){const o=settings(project.captions);if(!o.enabled&&!force)return null;const item=select(entries,time);if(!item)return null;const elapsed=Math.max(0,time-item.start),part=Math.max(.01,item.end-item.start);const active=Math.min(item.words.length-1,Math.floor(elapsed/part*item.words.length));const rows=item.words.length>4?[item.words.slice(0,Math.ceil(item.words.length/2)),item.words.slice(Math.ceil(item.words.length/2))]:[item.words];const y=o.y/100*1920,lineHeight=o.size*1.36;c.save();c.direction='rtl';c.textAlign='center';c.textBaseline='middle';c.font=NM.font('body',700,o.size);const widths=rows.map(r=>c.measureText(r.join(' ')).width),width=Math.min(1020,Math.max(...widths,0)+72),height=lineHeight*rows.length+38;
+ if(o.style==='box'){c.fillStyle='rgba(9,21,37,.82)';c.beginPath();c.roundRect(540-width/2,y-height/2,width,height,20);c.fill()}
+ rows.forEach((words,i)=>{const yy=y+(i-(rows.length-1)/2)*lineHeight;const text=words.join(' ');const total=c.measureText(text).width;let x=540+total/2;for(let j=0;j<words.length;j++){let token=words[j];let w=c.measureText(token).width;c.textAlign='right';c.lineJoin='round';c.lineWidth=7;if(o.style==='stroke'){c.strokeStyle='#071526';c.strokeText(token,x,yy)}c.fillStyle=(rows.length===1?j: i===0?j: j+rows[0].length)===active?o.highlight:'#ffffff';c.fillText(token,x,yy);x-=w+c.measureText(' ').width}}
+ );c.restore();return {x:540-width/2,y:y-height/2,w:width,h:height}}
+ function stamp(n){let ms=Math.max(0,Math.round(n*1000));const h=Math.floor(ms/3600000);ms-=h*3600000;const m=Math.floor(ms/60000);ms-=m*60000;const s=Math.floor(ms/1000);ms-=s*1000;return [h,m,s].map(x=>String(x).padStart(2,'0')).join(':')+','+String(ms).padStart(3,'0')}
+ const srt=entries=>entries.map((x,i)=>`${i+1}\n${stamp(x.start)} --> ${stamp(x.end)}\n${x.words.join(' ')}\n`).join('\n');
+ NM.captions={settings,schedule,chunks,draw,srt,select,stamp};
+})(window.NM);
