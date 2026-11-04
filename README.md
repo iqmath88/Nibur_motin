@@ -1,24 +1,16 @@
-# Nibor Motion v0.1.0
+# Nibor Motion v0.2.0
 
-نموذج أولي مستقل لاستوديو فيديوهات الرياضيات.
+Static PWA. Upload all files from the ZIP **directly to the GitHub repository root** (no enclosing folder).
 
-## التشغيل
+## Improvements
+- KaTeX equation rendering in browser preview (requires CDN access).
+- Progressive title/question/equation/answer appearance during playback and recording.
+- Scene timeline and LaTeX shortcut buttons.
+- Canvas video capture at 1080x1920. Browser may export WebM rather than MP4.
+- Updated cache/version.
 
-ارفع محتويات المجلد إلى جذر مستودع GitHub Pages أو شغّل خادم محلي (`python -m http.server 8000`) وافتح `http://localhost:8000`.
-
-## المنجز
-- واجهة عربية متجاوبة لـ iPad وWindows.
-- إدارة المشاهد وتوقيت كل مشهد ومعاينة تلقائية.
-- 4 قوالب مرئية.
-- حفظ محلي واستيراد وتصدير مشروع JSON.
-- PWA للعمل دون إنترنت بعد الزيارة الأولى.
-- تسجيل فيديو تجريبي باستخدام MediaRecorder: MP4 إن دعمه المتصفح وإلا WebM.
-
-## قيود النسخة
-- لا يوجد محرر LaTeX احترافي بعد؛ الرموز الرياضية نصوص Unicode.
-- التصدير التجريبي بلا صوت ولا انتقالات سلسة، ويحتاج اختبار توافق الأجهزة.
-- GitHub Pages استضافة ثابتة ولا توفر خادم تصيير MP4.
-- لا يضمن تسجيل MP4 على Safari/iPad أو جميع متصفحات Windows.
-
-## الخطوة التالية
-دمج MathLive/KaTeX ومحرك تحريك وتصيير MP4 موحد، ثم تسجيل الصوت واختبارات الأجهزة.
+## Known limitations
+- Canvas export uses plain text for equations, so LaTeX visual rendering differs from preview.
+- MP4 and offline KaTeX are not guaranteed; CDN is required for KaTeX.
+- Audio recording and true visual equation editing are not implemented.
+- Test recording and playback on target iPad/Windows browsers before publishing.
