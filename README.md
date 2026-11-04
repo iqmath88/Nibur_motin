@@ -1,24 +1,16 @@
-# Nibor Motion v0.4.1 — iPad Math Rendering Fix
+# Nibor Motion v0.5.0
 
-Upload the **seven files** directly to the GitHub Pages repository root. No enclosing folder.
+## Features
+- Animated educational emoji stickers per scene; drag on canvas with touch/mouse, adjust size and timing.
+- Audio import and microphone capture, local IndexedDB storage.
+- Export mixes the Canvas video track with the audio track using Web Audio MediaStreamDestination when supported.
+- Master canvas 1080x1920, but actual encoded video resolution may be reduced by Safari; inspect the output.
+- Retains MathLive, MathJax, themes, existing projects, scene timings, header/footer customization.
 
-## Changes
-- Fixed SVG math rendering pipeline: preserve MathJax SVG viewBox, pixel dimensions and explicit fill color for Safari.
-- Detect malformed or unloaded equations, display a warning instead of an opaque rectangle, and block video export until all formulas are rendered.
-- Adjustable header/footer font sizes (22–80 px), with visibility/text controls preserved.
-- Existing v0.4.0 projects and v0.1–v0.3 JSON remain readable; new settings default safely.
-- MathLive virtual keyboard auto policy for touch and improved missing-library fallback.
-- Updated version and service-worker cache to v0.4.1.
-
-## Limitations
-- Requires MathJax/MathLive downloads from CDNs on first use; offline math availability isn't guaranteed.
-- MP4 still depends on Safari/Chromium MediaRecorder capabilities; WebM may be used instead.
-- Equation rendering on real iPad Safari must be tested after deployment. An invalid expression such as `\s=\left{8\right}` must be corrected (for instance `\boxed{8}`), not treated as a valid formula.
-- No audio support in this version.
-
-## Smoke tests
-1. Type `\frac{x^2-4}{x-2}=x+2` in LaTeX, wait for it to render; no black bar.
-2. Change header/footer sizes and verify matching PNG and video framing.
-3. Type malformed LaTeX; verify the warning and that exporting is refused.
-4. Import a JSON project from v0.4.0 and check scene preservation.
-5. Run iPad Safari recording; confirm final video container and visual correctness.
+## Important caveats
+- MP4 with audio relies on Safari browser codec and MediaRecorder support; WebM fallback where available. It is not guaranteed for every iPad.
+- Recorded/imported audio is stored separately in IndexedDB, NOT included in JSON exports. Re-importing JSON on another device requires importing audio again.
+- Recorded audio is one project-wide clip, not a fully featured multitrack timeline; initial delay and volume are configurable.
+- SVG/mathematical rendering requires a first-time connection to the CDN.
+- Browser permissions require HTTPS for microphone access.
+- Use this ZIP's seven files directly in repository root. No enclosing folders.

@@ -5,3 +5,6 @@
 
 /* v0.4.1: header/footer typography controls and diagnostic messages */
 .branding-settings input[type=range]{width:100%;accent-color:#246da8}.branding-settings output{float:left;color:#315d87;font-variant-numeric:tabular-nums}.math-warning{background:#fff1ec;color:#8c281d;border:1px solid #efb0a4;border-radius:9px;padding:12px;font-size:13px;line-height:1.7;overflow-wrap:anywhere}.math-warning[hidden]{display:none}
+
+/* v0.5 studio controls */
+.sticker-palette{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:9px 0}.sticker-palette button{background:#edf4ff;color:#163757;font-size:24px;padding:9px 2px;min-width:0;touch-action:manipulation}.stickers input[type=range],.audio-panel input[type=range]{width:100%}.audio-panel input[type=file]{max-width:100%}#stage{touch-action:none;cursor:grab}#stage:active{cursor:grabbing}.audio-panel,.stickers{margin-top:16px}.audio-panel .actions{margin:10px 0}.audio-panel .actions button{min-width:0;font-size:12px}.audio-panel audio{display:block} .sticker-palette button:focus-visible{outline:3px solid #397ab8}
