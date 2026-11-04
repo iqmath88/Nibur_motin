@@ -2,3 +2,6 @@
 
 /* v0.4.0: editable video header and footer */
 .branding-settings{margin-top:18px;background:#f7fafd}.branding-settings .inline-setting{display:flex;align-items:center;gap:9px;margin:14px 0 7px;font-size:13px;cursor:pointer}.branding-settings .inline-setting input{width:18px;height:18px;accent-color:#246da8;flex:none}.branding-settings>button{margin-top:6px}.branding-settings input[type=text]{direction:auto}.branding-settings .muted{margin:9px 0}
+
+/* v0.4.1: header/footer typography controls and diagnostic messages */
+.branding-settings input[type=range]{width:100%;accent-color:#246da8}.branding-settings output{float:left;color:#315d87;font-variant-numeric:tabular-nums}.math-warning{background:#fff1ec;color:#8c281d;border:1px solid #efb0a4;border-radius:9px;padding:12px;font-size:13px;line-height:1.7;overflow-wrap:anywhere}.math-warning[hidden]{display:none}
