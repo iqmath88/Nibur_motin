@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102a43"><meta name="description" content="Nibor Motion — محرر فيديوهات الرياضيات التعليمية"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><title>Nibor Motion v0.5.3</title><link rel="stylesheet" href="styles.css"><script>window.MathJax={loader:{load:['input/tex','output/svg']},tex:{inlineMath:[['\\(','\\)']],packages:{'[+]':['ams']}},svg:{fontCache:'none'},startup:{typeset:false}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script><script defer src="https://unpkg.com/mathlive@0.104.2/mathlive.min.js"></script><script defer src="app.js?v=0.5.2"></script></head>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102a43"><meta name="description" content="Nibor Motion — محرر فيديوهات الرياضيات التعليمية"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><title>Nibor Motion v0.5.4</title><link rel="stylesheet" href="styles.css"><script>window.MathJax={loader:{load:['input/tex','output/svg']},tex:{inlineMath:[['\\(','\\)']],packages:{'[+]':['ams']}},svg:{fontCache:'none'},startup:{typeset:false}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script><script defer src="https://unpkg.com/mathlive@0.104.2/mathlive.min.js"></script><script defer src="app.js?v=0.5.4"></script></head>
 <body>
-<header class="header"><div><h1>Nibor Motion <small>v0.5.3</small></h1><p>استوديو الفيديوهات الرياضية المتحركة</p></div><span class="badge">معاينة وتصدير بمحرك واحد</span></header>
+<header class="header"><div><h1>Nibor Motion <small>v0.5.4</small></h1><p>استوديو الفيديوهات الرياضية المتحركة</p></div><span class="badge">معاينة وتصدير بمحرك واحد</span></header>
 <main class="layout">
 <section class="panel scenes-panel"><h2>المشاهد</h2><div id="scenes" aria-label="قائمة المشاهد"></div><div class="actions"><button id="add">+ مشهد جديد</button><button class="secondary" id="remove">حذف</button></div><label for="theme">قالب التصميم</label><select id="theme"><option value="notebook">دفتر مسطر</option><option value="blackboard">سبورة</option><option value="clean">أبيض</option><option value="dark">داكن</option></select><label for="project">اسم المشروع</label><input id="project" maxlength="120"><fieldset class="branding-settings"><legend>نص رأس الفيديو وذيله (جميع المشاهد)</legend>
 <label class="inline-setting" for="showHeader"><input type="checkbox" id="showHeader" checked> إظهار رأس الفيديو</label>
@@ -27,14 +27,22 @@
 <p class="muted">اختر مشهداً من القائمة ثم اكتب النص الذي يُقرأ. تتم معاينة الصوت عبر جهازك، ولإدخاله بالفيديو أنشئ ملفاً صوتياً أو سجّل أو استورد ملفاً.</p>
 <label for="speechText">نص التعليق الصوتي (يمكن أن يختلف عن المعادلة المعروضة)</label>
 <textarea id="speechText" rows="4" maxlength="4000" placeholder="مثال: إكس تربيع ناقص أربعة مقسوماً على إكس ناقص اثنين..." dir="auto"></textarea>
+<section class="free-tts" aria-label="توليد الصوت المجاني على iPad">
+<h3>صوت عربي مجاني — باستخدام اختصارات iPad</h3>
+<p class="muted">بدون حساب أو مفتاح API. حضّر نص الشرح هنا ثم أنشئ له ملفاً صوتياً باستخدام إجراء Apple «Make Spoken Audio from Text» في تطبيق الاختصارات. اختر الصوت العربي في الاختصار، ثم احفظ الملف واستورده أدناه. هذه الطريقة تحتاج إعداد اختصار مرة واحدة وتبادل الملف؛ لا تقوم Safari بالتقاط صوت الجهاز تلقائياً.</p>
+<div class="actions"><button type="button" id="prepareSpeech" class="secondary">🧮 تحضير نص من المشهد</button><button type="button" id="copySpeech" class="secondary">نسخ نص التعليق</button></div>
+<div class="actions"><button type="button" id="shortcutSpeech">▶ تشغيل اختصار توليد الصوت</button><button type="button" id="openShortcuts" class="secondary">فتح الاختصارات</button></div>
+<details><summary>إعداد الاختصار المجاني لأول مرة (iPad)</summary><ol><li>افتح تطبيق الاختصارات وأنشئ اختصاراً باسم <strong>Nibor Voice</strong>.</li><li>اجعل الاختصار يستقبل <strong>نصاً من إدخال الاختصار</strong> (Shortcut Input).</li><li>أضف إجراء <strong>Make Spoken Audio from Text</strong> وحدد لغة العربية والصوت المناسب إن توفر.</li><li>أضف إجراء <strong>Save File</strong> لاختيار مكان حفظ الصوت في تطبيق الملفات.</li><li>ارجع إلى Nibor Motion واكتب النص، ثم اضغط «تشغيل اختصار توليد الصوت»؛ بعد حفظه أضف الملف في «استيراد ملف صوتي لهذا المشهد».</li></ol><p class="muted">قد تختلف أسماء الإجراءات أو أصوات العربية بحسب إصدار iPadOS واللغة المثبتة.</p></details>
+<p id="freeTtsStatus" class="muted" role="status">بديل مجاني ينتج ملفاً حقيقياً إذا كان إجراء «Make Spoken Audio» متاحاً على جهازك؛ الإدخال/الإرجاع لا يتمان تلقائياً بالكامل.</p>
+</section>
 <label for="speechVoice">صوت المعاينة المحلي</label><select id="speechVoice"><option value="">صوت الجهاز الافتراضي</option></select>
 <label for="speechRate">سرعة النطق <output id="speechRateOut">1.0×</output></label><input id="speechRate" type="range" min="0.7" max="1.3" step="0.1" value="1">
 <div class="actions"><button id="speakPreview" type="button" class="secondary">▶ استماع تجريبي</button><button id="stopSpeaking" type="button" class="secondary">إيقاف القراءة</button></div>
 <p class="muted">القراءة التجريبية تستعمل أصوات Safari/Windows المتاحة، ولا يمكن ضمان تسجيلها داخل الفيديو. الصوت النهائي يحتاج ملفاً محفوظاً.</p>
-<label for="ttsEndpoint">رابط خدمة توليد الصوت الآمنة (مطلوب لتوليد ملف صوتي آلي)</label>
+<label for="ttsEndpoint">رابط خدمة توليد الصوت السحابية (اختياري ومدفوع غالباً)</label>
 <input id="ttsEndpoint" type="url" inputmode="url" placeholder="https://your-worker.example.workers.dev/tts" dir="ltr">
 <label for="ttsVoice">صوت الملف الناتج</label><select id="ttsVoice"><option value="marin">Marin</option><option value="cedar">Cedar</option><option value="coral">Coral</option><option value="alloy">Alloy</option><option value="nova">Nova</option><option value="onyx">Onyx</option><option value="shimmer">Shimmer</option></select>
-<button id="generateSpeech" type="button">✨ توليد وحفظ صوت المشهد</button>
+<button id="generateSpeech" type="button">✨ توليد سحابي (اختياري)</button>
 <p class="muted">لا تضع مفتاح API داخل التطبيق. الربط السحابي اختياري ويحتاج إعداد خدمة خادمية منفصلة؛ قد تكون له تكلفة. الصوت المولّد بالذكاء الاصطناعي يجب الإفصاح عن طبيعته.</p>
 <label for="audioFile">أو استيراد ملف صوتي لهذا المشهد</label><input id="audioFile" type="file" accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm">
 <div class="actions"><button id="recordAudio" type="button">🎙️ تسجيل صوت المشهد</button><button id="stopAudio" type="button" class="secondary" disabled>إيقاف التسجيل</button><button id="removeAudio" type="button" class="secondary">حذف صوت المشهد</button></div>
@@ -43,5 +51,5 @@
 <label class="inline-setting" for="autoDuration"><input id="autoDuration" type="checkbox" checked> تمديد مدة المشهد تلقائياً لاحتواء الصوت</label>
 <p id="audioStatus" class="muted" role="status" style="font-weight:700;color:#93420b">لم يُضف ملف صوتي لهذا المشهد.</p>
 </fieldset><div class="note">تعتمد المعاينة والتصدير على لوحة Canvas نفسها، ويظهر النص الذي تختاره لرأس وذيل الفيديو في كليهما. يعتمد نجاح التسجيل وصيغة MP4 على المتصفح والجهاز؛ يُدمج الصوت مع الفيديو عند دعم المتصفح؛ تحقق من الملف الناتج على iPad.</div></section>
-</main><footer>Nibor Motion · الإصدار 0.5.2 · للاستخدام التعليمي</footer>
+</main><footer>Nibor Motion · الإصدار 0.5.4 · للاستخدام التعليمي</footer>
 </body></html>

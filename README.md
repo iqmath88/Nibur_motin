@@ -1,24 +1,21 @@
-# Nibor Motion v0.5.3 — Voice export safeguard
+# Nibor Motion v0.5.4 — Free audio workflow
 
-Fixes: detect scenes containing voice narration text without an audio file; block accidental silent export; clearly indicate whether audio was saved. Browser speech preview is not audio generation. To export a voiced movie, record/import an audio file for each scene or configure a server-side TTS endpoint.
+This is a complete static GitHub Pages release. Extract all nine files directly into the repository root (no enclosing folder).
 
-Note: MP4 audio muxing and 1080p resolution on Safari still require testing on the actual device; this patch does not claim to fix platform encoder limitations.
+## Changes
+- Per-scene math narration preparation, editable before speech generation.
+- Copy narration and launch an Apple Shortcuts workflow named **Nibor Voice** on iPad (Shortcuts URL scheme).
+- Instructions in-app to create a shortcut: Shortcut Input (Text) -> Make Spoken Audio from Text -> Save File. Import the saved audio into the same scene using the existing file picker.
+- Existing recording, audio import, IndexedDB per-scene preservation and audio/video export retained.
+- Cloud TTS remains optional. There is no model or secret embedded in this release.
+- Version and service worker cache bumped.
 
-# Nibor Motion v0.5.2 — Scene narration
+## Critical limitations
+- **This is a no-subscription workflow, NOT automatic in-browser local neural TTS.** iPadOS must offer the Shortcuts action and an appropriate Arabic voice. The Shortcut saves audio; Safari requires the user to import it manually into the chosen scene.
+- Launching `shortcuts://` is device-specific; some browsers will block or warn. Copy text if it does.
+- Math-to-speech conversion covers only common formulas; review text manually before generating spoken audio.
+- `speechSynthesis` listening preview does not create an audio clip.
+- Exported MP4 audio tracks and 1080p encoding depend on iPad Safari / MediaRecorder support; hardware validation remains necessary.
 
-Upload the **seven static app files** from this ZIP to repository root (not the ZIP itself).
-
-## Voice features
-- Each scene has editable narration text, speech rate, a browser voice preview, a generated-audio voice selector, microphone recording, file import, and independent saved clip.
-- Browser speechSynthesis is preview ONLY, and is NOT embedded in video.
-- To generate an actual audio file from the text, deploy an HTTPS speech endpoint (see TTS_ENDPOINT.md) and paste its URL in the app. The static GitHub Pages site cannot keep API keys secure or produce paid speech by itself.
-- Generated/imported/recorded clips are stored in IndexedDB per stable project ID + stable scene ID. Clips are NOT packaged in JSON backups. Renaming a project preserves its storage namespace; audio clips are still local to this browser/device.
-- Export combines audio clips on the scene timeline using Web Audio, with the same Canvas render as preview. Playback and real output size need iPad testing; Safari may downscale or fail to mux.
-- Existing v0.5.0 project JSON remains readable. Old global audio clips do not migrate automatically to a particular scene.
-- AI-generated voice must be disclosed to viewers.
-
-## Caveats
-- Voice selection for speechSynthesis depends on installed device voices; generated voices depend on endpoint capabilities.
-- OpenAI legacy /v1/audio/speech models are scheduled for retirement January 6, 2027. The supplied example Worker is a temporary adapter only; replace its provider/model before that date.
-- Audio of one scene longer than scene duration may be truncated (unless Auto duration is on).
-- Recording/export tests on iPad are required.
+## Tests
+Run `node --check app.js`, `node --check sw.js`; verify UI IDs; unzip-test and flat-archive check. Browser smoke tests can be performed with Playwright if available.

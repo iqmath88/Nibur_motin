@@ -47,7 +47,7 @@ $('next').onclick=()=>{if(playing)return;index=(index+1)%state.scenes.length;clo
 $('seek').oninput=e=>{if(playing)return;clock=seconds()*Number(e.target.value)/1000;const at=atTime(clock);if(index!==at.index){index=at.index;drawControls()}render(at.progress)};
 $('save').onclick=()=>{save();status('تم حفظ المشروع في هذا المتصفح (الصوت محفوظ محلياً منفصلاً عن JSON)')};
 function download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
-$('json').onclick=()=>download(new Blob([JSON.stringify({...state,version:'0.5.0'},null,2)],{type:'application/json'}),'nibor-motion-project.json');
+$('json').onclick=()=>download(new Blob([JSON.stringify({...state,version:'0.5.4'},null,2)],{type:'application/json'}),'nibor-motion-project.json');
 $('import').onclick=()=>$('file').click();$('file').onchange=async e=>{try{if(!e.target.files[0])return;const x=JSON.parse(await e.target.files[0].text());stopSceneAudio();state=cleanProject(x);voiceBlobs.clear();loadSceneVoices().catch(()=>{});index=0;clock=state.scenes[0].duration;selectedStickerId=null;save();drawControls();syncBrandingControls();render(1);prewarm();status('تم استيراد المشروع. ملفات الصوت لا تتضمنها نسخة JSON؛ يلزم إعادة ربطها عند نقل المشروع.')}catch(err){status('فشل الاستيراد: '+err.message)}finally{e.target.value=''}};
 function initMathEditor(){const field=$('mathfield');if(!customElements.get('math-field')){$('mathHost').hidden=true;status('المحرر المرئي غير متاح حالياً؛ يمكنك استخدام إدخال LaTeX النصي.');return}mathfieldReady=true;try{field.mathVirtualKeyboardPolicy='auto';field.smartMode=true;field.value=state.scenes[index].equation;field.addEventListener('input',()=>{if(fieldSync||playing)return;fieldSync=true;const v=field.value;$('equation').value=v;fieldSync=false;redrawAfterEdit('equation',v)})}catch(e){console.warn(e)}}
 if(customElements.get('math-field'))initMathEditor();else Promise.race([customElements.whenDefined('math-field'),waitForMathEditorTimeout()]).then(()=>{if(customElements.get('math-field'))initMathEditor();else {$('mathHost').hidden=true;status('المحرر المرئي غير متاح؛ استخدم حقل LaTeX النصي.')}}).catch(()=>{});
@@ -139,7 +139,7 @@ for(const a of sources)a.src.start(audioStart+a.start,0,a.length);
 const total=seconds();status('جارٍ تصدير الفيديو مع صوت كل مشهد حسب توقيته…');
 while(token===playToken&&(performance.now()-startTime)/1000<total){clock=Math.min(total,(performance.now()-startTime)/1000);const at=atTime(Math.min(clock,total-.001));if(index!==at.index){index=at.index;drawControls()}render(at.progress);await wait(30)}
 clock=total;index=state.scenes.length-1;drawControls();render(1);await wait(170);rec.stop();await complete;
-if(chunks.length){const ext=mime.startsWith('video/mp4')?'mp4':'webm';download(new Blob(chunks,{type:mime}),`nibor-motion-v0.5.3.${ext}`);status(`تم إنشاء ${ext.toUpperCase()} مع ${voiceEntries.length} تعليق صوتي. تحقق من الدقة الفعلية وتزامن الصوت على iPad.`)}else status('لم ينتج المتصفح ملف فيديو صالحاً');
+if(chunks.length){const ext=mime.startsWith('video/mp4')?'mp4':'webm';download(new Blob(chunks,{type:mime}),`nibor-motion-v0.5.4.${ext}`);status(`تم إنشاء ${ext.toUpperCase()} مع ${voiceEntries.length} تعليق صوتي. تحقق من الدقة الفعلية وتزامن الصوت على iPad.`)}else status('لم ينتج المتصفح ملف فيديو صالحاً');
 }catch(err){status('تعذر التصدير: '+err.message);if(rec?.state==='recording'){try{rec.stop()}catch(e){}}}finally{sources.forEach(a=>{try{a.src.stop()}catch(e){}});stream?.getTracks().forEach(t=>t.stop());videoStream?.getTracks().forEach(t=>t.stop());if(ac)await ac.close().catch(()=>{});exporting=false;setBusy(false)}}
 $('export').onclick=exportVideo;
 function initialize(){save();index=0;clock=state.scenes[0].duration;drawControls();syncBrandingControls();render(1);prewarm();updateMathStatus();if(!window.MathJax)status('الرياضيات حالياً بنص احتياطي. يتطلب إخراج المعادلات الاتصال بالإنترنت.');}
@@ -171,6 +171,41 @@ function stopSceneAudio(){previewVoice?.pause();previewVoice=null;if(previewVoic
 function setSceneAudio(blob,sid=index,persist=true){const id=typeof sid==='number'?state.scenes[sid].id:sid;if(!blob||!blob.size)return;voiceBlobs.set(id,blob);if(persist)dbAudio('put',voiceKey(id),blob).catch(e=>status('تعذر حفظ الصوت محلياً: '+e.message));if(state.scenes[index].id===id)syncSceneVoiceUI();}
 function syncSceneVoiceUI(){const s=state.scenes[index],blob=voiceBlobs.get(s.id);$('speechText').value=s.speechText;$('speechRate').value=s.speechRate;$('speechRateOut').textContent=s.speechRate.toFixed(1)+'×';$('ttsVoice').value=s.ttsVoice;$('audioVolume').value=Math.round(s.voiceVolume*100);$('audioVolumeOut').textContent=Math.round(s.voiceVolume*100)+'%';$('autoDuration').checked=s.autoDuration;const player=$('audioPreview');player.pause();if(player.dataset.url)URL.revokeObjectURL(player.dataset.url);if(blob){player.dataset.url=URL.createObjectURL(blob);player.src=player.dataset.url;$('audioStatus').textContent='✅ ملف صوتي محفوظ لهذا المشهد: '+(blob.size/1024).toFixed(0)+'KB — سيدخل في الفيديو عند التصدير.';}else{delete player.dataset.url;player.removeAttribute('src');player.load();$('audioStatus').textContent=s.speechText.trim()?'⚠ النص مكتوب لكن لم يتم توليد ملف صوتي. الاستماع التجريبي لا يُضاف إلى الفيديو.':'لا يوجد ملف صوتي لهذا المشهد بعد.'}}
 function updateSceneVoice(key,val){if(playing)return;state.scenes[index][key]=val;save()}
+// Free on-device production path: Apple Shortcuts generates an actual audio file.
+// The browser cannot record speechSynthesis output directly on Safari.
+function speechFromMath(tex){
+  let x=String(tex||'').trim();if(!x)return '';
+  // Common school formulas only; teacher must review complex TeX before generating audio.
+  for(let i=0;i<3;i++)x=x.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g,'البسط $1 على المقام $2');
+  x=x.replace(/\\sqrt\{([^{}]+)\}/g,'الجذر التربيعي لـ $1')
+   .replace(/\\log_\{([^{}]+)\}/g,'لوغاريتم للأساس $1 ')
+   .replace(/\\log/g,'لوغاريتم ')
+   .replace(/\\pi/g,'باي').replace(/\\sum/g,'مجموع')
+   .replace(/\\times|\\cdot/g,' في ').replace(/\\div/g,' مقسوماً على ')
+   .replace(/\\leq/g,' أصغر من أو يساوي ').replace(/\\geq/g,' أكبر من أو يساوي ')
+   .replace(/\\neq/g,' لا يساوي ').replace(/\\infty/g,'ما لا نهاية')
+   .replace(/\\left|\\right|\\boxed/g,'').replace(/\\[a-zA-Z]+/g,' ')
+   .replace(/\^\{2\}|\^2/g,' تربيع ').replace(/\^\{3\}|\^3/g,' تكعيب ')
+   .replace(/\^\{([^{}]+)\}/g,' أس $1 ').replace(/\^([\dxy])/g,' أس $1 ')
+   .replace(/_/g,' دليل ').replace(/=/g,' يساوي ').replace(/\+/g,' زائد ')
+   .replace(/−|-/g,' ناقص ').replace(/\*/g,' في ')
+   .replace(/[{}$]/g,' ').replace(/\s+/g,' ').trim();
+  return x;
+}
+function preparedNarration(scene){
+ const bits=[scene.title,scene.question,speechFromMath(scene.equation),scene.answer?'النتيجة النهائية: '+speechFromMath(scene.answer):''];
+ return bits.filter(Boolean).join('. ').replace(/\.{2,}/g,'.');
+}
+$('prepareSpeech').onclick=()=>{if(playing)return;const s=state.scenes[index];if(s.speechText.trim()&&!confirm('سيستبدل نص التعليق الحالي بنص مقترح من محتوى المشهد. متابعة؟'))return;
+ s.speechText=preparedNarration(s).slice(0,4000);save();$('speechText').value=s.speechText;syncSceneVoiceUI();$('freeTtsStatus').textContent='تم إعداد النص. راجع قراءة الكسور والأسس والأعداد قبل توليد الصوت.';};
+$('copySpeech').onclick=async()=>{const t=state.scenes[index].speechText.trim();if(!t){status('اكتب نص التعليق أولاً');return}
+ try{await navigator.clipboard.writeText(t);$('freeTtsStatus').textContent='تم نسخ نص المشهد. الصقه في الاختصار إذا لم ينتقل تلقائياً.'}catch(e){$('speechText').focus();$('speechText').select();$('freeTtsStatus').textContent='تعذر النسخ الآلي؛ حدد النص وانسخه يدوياً.'}};
+$('openShortcuts').onclick=()=>{location.href='shortcuts://'};
+$('shortcutSpeech').onclick=()=>{const t=state.scenes[index].speechText.trim();if(!t){status('اكتب نص التعليق أولاً');return}
+ if(t.length>1200){$('freeTtsStatus').textContent='النص طويل لتمريره في رابط الاختصار. استخدم «نسخ نص التعليق» والصقه داخل الاختصار.';return}
+ $('freeTtsStatus').textContent='سيُفتح اختصار Nibor Voice إذا كنت أنشأته. احفظ الصوت ثم استورده في نفس المشهد.';
+ location.href='shortcuts://run-shortcut?name='+encodeURIComponent('Nibor Voice')+'&input=text&text='+encodeURIComponent(t);
+};
 $('speechText').oninput=e=>updateSceneVoice('speechText',e.target.value.slice(0,4000));
 $('speechRate').oninput=e=>{const v=Number(e.target.value);updateSceneVoice('speechRate',v);$('speechRateOut').textContent=v.toFixed(1)+'×'};
 $('ttsVoice').onchange=e=>updateSceneVoice('ttsVoice',e.target.value);

@@ -10,3 +10,10 @@
 .sticker-palette{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:9px 0}.sticker-palette button{background:#edf4ff;color:#163757;font-size:24px;padding:9px 2px;min-width:0;touch-action:manipulation}.stickers input[type=range],.audio-panel input[type=range]{width:100%}.audio-panel input[type=file]{max-width:100%}#stage{touch-action:none;cursor:grab}#stage:active{cursor:grabbing}.audio-panel,.stickers{margin-top:16px}.audio-panel .actions{margin:10px 0}.audio-panel .actions button{min-width:0;font-size:12px}.audio-panel audio{display:block} .sticker-palette button:focus-visible{outline:3px solid #397ab8}
 
 .audio-panel textarea{min-height:100px}.audio-panel button{margin-block:3px}.audio-panel #generateSpeech{width:100%;margin-top:10px}.audio-panel #ttsEndpoint{direction:ltr;text-align:left}.audio-panel{border-color:#d6e6f2}
+
+/* v0.5.4: cost-free native Shortcuts audio workflow */
+.free-tts{background:#f2f8f4;border:1px solid #a7cfb8;border-radius:14px;padding:13px;margin:12px 0}
+.free-tts h3{margin:0 0 8px;font-size:15px;color:#205743}
+.free-tts details{margin-top:12px;background:#fff;border-radius:9px;padding:10px;line-height:1.9;font-size:13px}
+.free-tts summary{cursor:pointer;font-weight:650}.free-tts ol{padding-inline-start:21px;margin:10px 0}
+.free-tts .actions{display:flex;gap:7px;flex-wrap:wrap}.free-tts .actions button{flex:1 1 130px}
