@@ -1,21 +1,35 @@
-# Nibor Motion v0.5.4 — Free audio workflow
+# Nibor Motion v0.5.4 — إصلاحات استقرار
 
-This is a complete static GitHub Pages release. Extract all nine files directly into the repository root (no enclosing folder).
+تحديث إصلاحي مبني على الملف المرفق، دون ميزات جديدة أو أدوات بناء.
 
-## Changes
-- Per-scene math narration preparation, editable before speech generation.
-- Copy narration and launch an Apple Shortcuts workflow named **Nibor Voice** on iPad (Shortcuts URL scheme).
-- Instructions in-app to create a shortcut: Shortcut Input (Text) -> Make Spoken Audio from Text -> Save File. Import the saved audio into the same scene using the existing file picker.
-- Existing recording, audio import, IndexedDB per-scene preservation and audio/video export retained.
-- Cloud TTS remains optional. There is no model or secret embedded in this release.
-- Version and service worker cache bumped.
+## الإصلاحات
+- ثبات معاينة المشهد المحدد بعد فتح المشروع أو تعديل الرأس/الذيل والملصقات.
+- إبقاء الملصق ظاهراً عند النهاية المحددة 100%.
+- رسوم MathJax منفصلة لكل لون: معادلات فاتحة للقوالب الداكنة، ونتائج داكنة في جميع القوالب، بلا Canvas filter.
+- التفاف عنوان المشهد (سطران) والسؤال (أربعة أسطر)، والتزام حد 120 ثانية.
+- إلغاء التصدير دون ملف ناقص مع انتظار MediaRecorder والتنظيف.
+- انتظار اكتمال تحميل الصوت قبل فحوصات التصدير.
+- توحيد الإصدار عبر version.js، واستخدام اسم المشروع في JSON والفيديو بعد تنظيفه.
+- طلب تأكيد حذف المشهد أو الملصق واستيراد JSON.
+- debounce 250ms ورسوم المعادلات المخزنة بحد 80، مع حماية معادلات المشاهد المستخدمة.
+- اتجاه الرأس التلقائي؛ الذيل دون تغيير.
+- إصلاح إضافي مهم: مطابقة app.js?v=0.5.4 في كاش SW عند عدم توفر الإنترنت.
 
-## Critical limitations
-- **This is a no-subscription workflow, NOT automatic in-browser local neural TTS.** iPadOS must offer the Shortcuts action and an appropriate Arabic voice. The Shortcut saves audio; Safari requires the user to import it manually into the chosen scene.
-- Launching `shortcuts://` is device-specific; some browsers will block or warn. Copy text if it does.
-- Math-to-speech conversion covers only common formulas; review text manually before generating spoken audio.
-- `speechSynthesis` listening preview does not create an audio clip.
-- Exported MP4 audio tracks and 1080p encoding depend on iPad Safari / MediaRecorder support; hardware validation remains necessary.
+## الحزمة
+جميع الملفات تقع في جذر ZIP. ارفعها إلى جذر GitHub Pages واستبدل الملفات القديمة، بما في ذلك version.js الجديد.
 
-## Tests
-Run `node --check app.js`, `node --check sw.js`; verify UI IDs; unzip-test and flat-archive check. Browser smoke tests can be performed with Playwright if available.
+## اختبارات ضرورية على iPad
+1. افتح المشروع واختر المشهد الثاني ثم عدّل الرأس؛ تأكد من بقاء المحتوى.
+2. أضف ملصق 💡 واسحبه باللمس.
+3. جرّب السبورة والداكن؛ المعادلة فاتحة والنتيجة داكنة.
+4. جرّب سؤالاً عربياً من 25 كلمة.
+5. ضع المدة 45 ثم جرّب التشغيل والسحب على الشريط.
+6. ابدأ تصديراً ثم ألغِه؛ لا يجب أن يُنزَّل ملف.
+7. استورد نسخة احتياطية قديمة من v0.5.3.
+8. صدّر فيديو بالصوت وتحقق من وجود المسار الصوتي والمدة والدقة فعلياً.
+
+## توصيات لاحقة — خارج نطاق الإصدار
+- تضمين الملفات الصوتية داخل النسخة الاحتياطية.
+- دعم مشاريع متعددة.
+- إتاحة MathJax وMathLive دون اتصال إنترنت.
+- مصادقة لخادم TTS.

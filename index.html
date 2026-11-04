@@ -1,7 +1,15 @@
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102a43"><meta name="description" content="Nibor Motion — محرر فيديوهات الرياضيات التعليمية"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><title>Nibor Motion v0.5.4</title><link rel="stylesheet" href="styles.css"><script>window.MathJax={loader:{load:['input/tex','output/svg']},tex:{inlineMath:[['\\(','\\)']],packages:{'[+]':['ams']}},svg:{fontCache:'none'},startup:{typeset:false}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script><script defer src="https://unpkg.com/mathlive@0.104.2/mathlive.min.js"></script><script defer src="app.js?v=0.5.4"></script></head>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102a43"><meta name="description" content="Nibor Motion — محرر فيديوهات الرياضيات التعليمية"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><title>Nibor Motion</title><link rel="stylesheet" href="styles.css"><script>window.MathJax={loader:{load:['input/tex','output/svg']},tex:{inlineMath:[['\\(','\\)']],packages:{'[+]':['ams']}},svg:{fontCache:'none'},startup:{typeset:false}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script><script defer src="https://unpkg.com/mathlive@0.104.2/mathlive.min.js"></script><script src="version.js"></script><script>
+window.addEventListener('DOMContentLoaded',()=>{
+ document.title='Nibor Motion v'+APP_VERSION;
+ document.getElementById('appVersion').textContent='v'+APP_VERSION;
+ document.getElementById('footerVersion').textContent='Nibor Motion · الإصدار '+APP_VERSION+' · للاستخدام التعليمي';
+ const script=document.createElement('script');script.src='app.js?v='+encodeURIComponent(APP_VERSION);
+ document.body.append(script);
+});
+</script></head>
 <body>
-<header class="header"><div><h1>Nibor Motion <small>v0.5.4</small></h1><p>استوديو الفيديوهات الرياضية المتحركة</p></div><span class="badge">معاينة وتصدير بمحرك واحد</span></header>
+<header class="header"><div><h1>Nibor Motion <small id="appVersion"></small></h1><p>استوديو الفيديوهات الرياضية المتحركة</p></div><span class="badge">معاينة وتصدير بمحرك واحد</span></header>
 <main class="layout">
 <section class="panel scenes-panel"><h2>المشاهد</h2><div id="scenes" aria-label="قائمة المشاهد"></div><div class="actions"><button id="add">+ مشهد جديد</button><button class="secondary" id="remove">حذف</button></div><label for="theme">قالب التصميم</label><select id="theme"><option value="notebook">دفتر مسطر</option><option value="blackboard">سبورة</option><option value="clean">أبيض</option><option value="dark">داكن</option></select><label for="project">اسم المشروع</label><input id="project" maxlength="120"><fieldset class="branding-settings"><legend>نص رأس الفيديو وذيله (جميع المشاهد)</legend>
 <label class="inline-setting" for="showHeader"><input type="checkbox" id="showHeader" checked> إظهار رأس الفيديو</label>
@@ -51,5 +59,5 @@
 <label class="inline-setting" for="autoDuration"><input id="autoDuration" type="checkbox" checked> تمديد مدة المشهد تلقائياً لاحتواء الصوت</label>
 <p id="audioStatus" class="muted" role="status" style="font-weight:700;color:#93420b">لم يُضف ملف صوتي لهذا المشهد.</p>
 </fieldset><div class="note">تعتمد المعاينة والتصدير على لوحة Canvas نفسها، ويظهر النص الذي تختاره لرأس وذيل الفيديو في كليهما. يعتمد نجاح التسجيل وصيغة MP4 على المتصفح والجهاز؛ يُدمج الصوت مع الفيديو عند دعم المتصفح؛ تحقق من الملف الناتج على iPad.</div></section>
-</main><footer>Nibor Motion · الإصدار 0.5.4 · للاستخدام التعليمي</footer>
+</main><footer id="footerVersion"></footer>
 </body></html>
