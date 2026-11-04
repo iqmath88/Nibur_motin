@@ -1,6 +1,9 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const MAX_SCENE_DURATION=120;
+const TYPE_STYLES=['none','rounded','rectangle','outline','underline','highlight'];
+const ALLOWED_COLORS=['#f4d96c','#cfe7fa','#e3efda','#f7d5e5','#ffffff','#193c5d','#f8e7c8'];
+const cleanColor=(v,fallback)=>ALLOWED_COLORS.includes(v)?v:fallback;
 const MATH_CACHE_LIMIT=80;
 const themes=['notebook','blackboard','clean','dark'];
 const defaults=[
@@ -15,7 +18,7 @@ function cleanBranding(b){return {header:brandingText(b?.header,brandingDefaults
 
 const bounded=(x,min,max,fallback)=>{let n=Number(x);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback};
 function makeSceneId(){return (crypto.randomUUID?.()||'scene-'+Date.now()+'-'+Math.random().toString(36).slice(2))}
-const cleanScene=s=>({id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
+const cleanScene=s=>({id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),titleSize:bounded(s?.titleSize,30,100,57),questionSize:bounded(s?.questionSize,30,90,46),equationScale:bounded(s?.equationScale,60,150,100),answerScale:bounded(s?.answerScale,60,150,100),titleBg:TYPE_STYLES.includes(s?.titleBg)?s.titleBg:'rounded',questionBg:TYPE_STYLES.includes(s?.questionBg)?s.questionBg:'none',answerBg:TYPE_STYLES.includes(s?.answerBg)?s.answerBg:'rounded',titleBgColor:cleanColor(s?.titleBgColor,'#f4d96c'),questionBgColor:cleanColor(s?.questionBgColor,'#cfe7fa'),answerBgColor:cleanColor(s?.answerBgColor,'#e3efda'),titleY:bounded(s?.titleY,17,47,32.5),questionY:bounded(s?.questionY,28,68,44.3),equationY:bounded(s?.equationY,40,79,57.6),answerY:bounded(s?.answerY,55,90,72.1),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
 function cleanSticker(s){return {id:String(s?.id||Date.now()+'-'+Math.random()),icon:['❓','❗','💡','✅','✏️','🎯','➡️','⭐','⭕','⚠️'].includes(s?.icon)?s.icon:'❓',x:bounded(s?.x,0,1,.5),y:bounded(s?.y,0,1,.38),size:bounded(s?.size,45,380,140),start:bounded(s?.start,0,95,10),end:bounded(s?.end,5,100,95),animation:['pop','fade','spin','static'].includes(s?.animation)?s.animation:'pop'}}
 function cleanAudio(a){return {offset:bounded(a?.offset,0,30,0),volume:bounded(a?.volume,0,1,1)}}
 function cleanProject(x){if(!Array.isArray(x?.scenes)||!x.scenes.length||x.scenes.length>100)throw Error('ملف المشروع غير صالح');return {projectId:String(x.projectId||makeSceneId()),name:String(x.name||'مشروع').slice(0,120),theme:themes.includes(x.theme)?x.theme:'notebook',branding:cleanBranding(x.branding),audio:cleanAudio(x.audio),scenes:x.scenes.map(cleanScene)}}
@@ -26,7 +29,7 @@ const ctx=$('stage').getContext('2d',{alpha:false});const CW=1080,CH=1920;
 const mathCache=new Map();let mathReady=false;
 const mathKey=(raw,color)=>color+'|'+String(raw||'').trim();
 const sceneFormulaKeys=()=>new Set(state.scenes.flatMap(s=>[
- mathKey(s.equation,formulaColor()),mathKey(s.answer,'#173a4b')
+ mathKey(s.equation,formulaColor()),mathKey(s.answer,answerFormulaColor(s))
 ]).filter(k=>k.split('|')[1]));
 function trimMathCache(){
  const used=sceneFormulaKeys();
@@ -36,6 +39,7 @@ function trimMathCache(){
  }
 }
 const formulaColor=()=>['blackboard','dark'].includes(state.theme)?'#f4f7ff':'#173a5c';
+const answerFormulaColor=s=>['rounded','rectangle'].includes(s.answerBg)?backdropTextColor(s.answerBg,s.answerBgColor,formulaColor()):formulaColor();
 let mathDebounce=null;
 function scheduleMathWarm(){clearTimeout(mathDebounce);mathDebounce=setTimeout(()=>{prewarm();trimMathCache()},250)}
 const status=msg=>{$('status').textContent=msg};
@@ -45,7 +49,22 @@ function sceneStart(i){return state.scenes.slice(0,i).reduce((a,s)=>a+s.duration
 function atTime(t){let passed=0;for(let i=0;i<state.scenes.length;i++){let d=state.scenes[i].duration;if(t<passed+d || i===state.scenes.length-1)return {index:i,progress:Math.max(0,Math.min(1,(t-passed)/d))};passed+=d}return {index:0,progress:0}}
 function fmt(t){t=Math.max(0,Math.floor(t));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
 function setBusy(v){playing=v;$('play').disabled=v;$('export').disabled=v;$('png').disabled=v;$('stop').disabled=!v}
-function drawControls(){const s=state.scenes[index];$('scenes').replaceChildren();state.scenes.forEach((scene,i)=>{const el=document.createElement('button');el.type='button';el.className='scene'+(i===index?' active':'');const t=document.createElement('span');t.textContent=`${i+1}. ${scene.title||'مشهد جديد'}`;const d=document.createElement('small');d.textContent=`${scene.duration} ث`;el.append(t,d);el.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+state.scenes[i].duration;stopSceneAudio();drawControls();render(1)};$('scenes').append(el)});$('timeline').replaceChildren();state.scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=i===index?'active':'';b.textContent=`${i+1} · ${s.duration}ث`;b.style.flexGrow=String(s.duration);b.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+s.duration;stopSceneAudio();drawControls();render(1)};$('timeline').append(b)});for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).value=s[key];for(const pair of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']])$(pair[1]).textContent=s[pair[0]]+'%';$('theme').value=state.theme;$('project').value=state.name;$('counter').textContent=`${index+1} / ${state.scenes.length}`;updateSeek();syncMathField(s.equation);refreshStickers();syncSceneVoiceUI()}
+function drawControls(){const s=state.scenes[index];$('scenes').replaceChildren();state.scenes.forEach((scene,i)=>{const el=document.createElement('button');el.type='button';el.className='scene'+(i===index?' active':'');const t=document.createElement('span');t.textContent=`${i+1}. ${scene.title||'مشهد جديد'}`;const d=document.createElement('small');d.textContent=`${scene.duration} ث`;el.append(t,d);el.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+state.scenes[i].duration;stopSceneAudio();drawControls();render(1)};$('scenes').append(el)});$('timeline').replaceChildren();state.scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=i===index?'active':'';b.textContent=`${i+1} · ${s.duration}ث`;b.style.flexGrow=String(s.duration);b.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+s.duration;stopSceneAudio();drawControls();render(1)};$('timeline').append(b)});for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).value=s[key];syncTypographyControls();for(const pair of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']])$(pair[1]).textContent=s[pair[0]]+'%';$('theme').value=state.theme;$('project').value=state.name;$('counter').textContent=`${index+1} / ${state.scenes.length}`;updateSeek();syncMathField(s.equation);refreshStickers();syncSceneVoiceUI()}
+const TYPO_FIELDS=['titleSize','questionSize','equationScale','answerScale','titleY','questionY','equationY','answerY','titleBg','questionBg','answerBg','titleBgColor','questionBgColor','answerBgColor'];
+function syncTypographyControls(){
+ const scene=state.scenes[index];
+ for(const key of TYPO_FIELDS){const el=$(key);if(!el)continue;el.value=scene[key];const out=$(key+'Out');if(out)out.textContent=scene[key]+(key.endsWith('Y')||key.endsWith('Scale')?'%':key.endsWith('Size')?'px':'')}
+}
+function updateTypography(key,value){
+ if(playing)return;
+ const scene=state.scenes[index];
+ if(key.endsWith('Bg'))scene[key]=TYPE_STYLES.includes(value)?value:'none';
+ else if(key.endsWith('BgColor'))scene[key]=cleanColor(value,scene[key]);
+ else {const ranges={titleSize:[30,100],questionSize:[30,90],equationScale:[60,150],answerScale:[60,150],titleY:[17,47],questionY:[28,68],equationY:[40,79],answerY:[55,90]};const [min,max]=ranges[key];scene[key]=bounded(value,min,max,scene[key]);}
+ save();syncTypographyControls();scheduleMathWarm();renderCurrent();
+}
+for(const key of TYPO_FIELDS){const el=$(key);if(el)el.addEventListener(el.tagName==='SELECT'?'change':'input',e=>updateTypography(key,e.target.value))}
+$('resetTypography').onclick=()=>{if(playing)return;const scene=state.scenes[index];const d=cleanScene({});for(const key of TYPO_FIELDS)scene[key]=d[key];save();syncTypographyControls();scheduleMathWarm();renderCurrent();status('تمت استعادة تنسيق النصوص الافتراضي لهذا المشهد')};
 function updateSeek(){const total=seconds();$('seek').value=Math.round(1000*clock/Math.max(.01,total));$('time').textContent=`${fmt(clock)} / ${fmt(total)}`}
 function syncMathField(value){const field=$('mathfield');if(!mathfieldReady||!field)return;fieldSync=true;try{field.value=value||''}catch(e){console.warn(e)}fieldSync=false}
 function redrawAfterEdit(key,val){const s=state.scenes[index];s[key]=(['duration'].includes(key)?bounded(val,1,MAX_SCENE_DURATION,4):['qAt','eAt','aAt'].includes(key)?bounded(val,0,95,20):String(val));save();if(key==='duration'){clock=sceneStart(index)+s.duration;drawControls()}else{if(key==='title'){const label=$('scenes').children[index]?.firstChild;if(label)label.textContent=`${index+1}. ${s.title||'مشهد جديد'}`;}if(key==='equation'&&$('mathfield')?.value!==s.equation)syncMathField(s.equation);if(['qAt','eAt','aAt'].includes(key))$({qAt:'qOut',eAt:'eOut',aAt:'aOut'}[key]).textContent=s[key]+'%';render(1)}if(key==='equation'||key==='answer')scheduleMathWarm();}
@@ -111,7 +130,7 @@ async function warmMath(raw,color=formulaColor()){
  finally{entry.pending=null;trimMathCache();renderCurrent();updateMathStatus();}})();
  return entry.pending;
 }
-function usedMathPairs(){return state.scenes.flatMap(s=>[[s.equation,formulaColor()],[s.answer,'#173a4b']]).filter(([v])=>String(v||'').trim())}
+function usedMathPairs(){return state.scenes.flatMap(s=>[[s.equation,formulaColor()],[s.answer,answerFormulaColor(s)]]).filter(([v])=>String(v||'').trim())}
 function updateMathStatus(){
  const failed=usedMathPairs().find(([raw,color])=>mathCache.get(mathKey(raw,color))?.error);
  if(failed){const entry=mathCache.get(mathKey(...failed));$('mathWarning').hidden=false;$('mathWarning').textContent='تنبيه: توجد معادلة لم تُرسم بشكل صحيح: '+failed[0]+' — '+entry.error+'؛ صحح LaTeX قبل التصدير.';}
@@ -120,37 +139,39 @@ function updateMathStatus(){
 function prewarm(){const pending=usedMathPairs().map(([raw,color])=>warmMath(raw,color));trimMathCache();return Promise.all(pending)}
 function renderCurrent(){if(!playing){const at=atTime(clock);render(at.index===index?at.progress:1)}}
 // Word wrapping respects manual newlines, RTL direction, and line count limits.
-function text(ctx,str,x,y,maxWidth,size,color,weight=650,dir='rtl',maxLines=2,minFont=24){
- ctx.save();ctx.fillStyle=color;ctx.direction=dir;ctx.textAlign='center';ctx.textBaseline='middle';
- const source=String(str||'');
- const wrap=(fontSize)=>{
+function measureTextBlock(ctx,str,maxWidth,size,weight=650,maxLines=2,minFont=24,maxHeight=Infinity){
+ ctx.save();
+ const paragraphs=String(str||'').split('\n');
+ function wrap(fontSize){
   ctx.font=`${weight} ${fontSize}px system-ui, sans-serif`;
   const result=[];
-  for(const paragraph of source.split('\n')){
+  for(const paragraph of paragraphs){
    if(!paragraph.trim()){result.push('');continue}
    let line='';
    for(const word of paragraph.trim().split(/\s+/)){
     const next=line?line+' '+word:word;
     if(line&&ctx.measureText(next).width>maxWidth){result.push(line);line=''}
     if(ctx.measureText(word).width>maxWidth){
-     for(const letter of word){
-      if(line&&ctx.measureText(line+letter).width>maxWidth){result.push(line);line=''}
-      line+=letter;
-     }
+     for(const letter of word){if(line&&ctx.measureText(line+letter).width>maxWidth){result.push(line);line=''}line+=letter}
     }else line=line?line+' '+word:word;
    }
    result.push(line);
   }
   return result;
- };
+ }
  let actual=size,rows=wrap(actual);
- while(rows.length>maxLines&&actual>minFont){actual=Math.max(minFont,actual-1);rows=wrap(actual)}
+ while((rows.length>maxLines||rows.length*actual*1.18>maxHeight)&&actual>minFont){actual=Math.max(minFont,actual-1);rows=wrap(actual)}
  if(rows.length>maxLines){rows=rows.slice(0,maxLines);let last=rows[maxLines-1];while(last&&ctx.measureText(last+'…').width>maxWidth)last=last.slice(0,-1);rows[maxLines-1]=last+'…'}
- const lineHeight=actual*1.18;
- let yy=y-(rows.length-1)*lineHeight/2;
- for(const line of rows){ctx.fillText(line,x,yy);yy+=lineHeight}
- ctx.restore();
+ ctx.restore();return {rows,size:actual,lineHeight:actual*1.18,height:rows.length*actual*1.18};
 }
+function text(ctx,str,x,y,maxWidth,size,color,weight=650,dir='rtl',maxLines=2,minFont=24,maxHeight=Infinity){
+ const layout=measureTextBlock(ctx,str,maxWidth,size,weight,maxLines,minFont,maxHeight);
+ ctx.save();ctx.fillStyle=color;ctx.direction=dir;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${weight} ${layout.size}px system-ui, sans-serif`;
+ let yy=y-(layout.rows.length-1)*layout.lineHeight/2;
+ for(const line of layout.rows){ctx.fillText(line,x,yy);yy+=layout.lineHeight}
+ ctx.restore();return layout;
+}
+
 function math(ctx,raw,cx,cy,maxW,maxH,color){
  raw=String(raw||'').trim();if(!raw)return;
  const entry=mathCache.get(mathKey(raw,color));
@@ -164,8 +185,46 @@ function math(ctx,raw,cx,cy,maxW,maxH,color){
  ctx.save();ctx.fillStyle='rgba(191,67,48,0.1)';ctx.fillRect(cx-maxW*.48,cy-45,maxW*.96,90);
  text(ctx,entry?.error?'⚠ صياغة المعادلة تحتاج تصحيحاً':'جارٍ تجهيز المعادلة…',cx,cy,maxW*.9,27,'#af4430',550);ctx.restore();
 }
+function drawTextBackdrop(c,shape,x,y,w,h,color){
+ if(shape==='none')return;
+ c.save();c.lineWidth=5;c.strokeStyle=color;c.fillStyle=color;
+ if(shape==='underline'){c.beginPath();c.roundRect(x-w/2,y+h/2-12,w,12,6);c.fill();}
+ else if(shape==='highlight'){c.globalAlpha*=.55;c.fillRect(x-w/2,y-h*.12,w,h*.54);}
+ else {c.beginPath();c.roundRect(x-w/2,y-h/2,w,h,shape==='rounded'?Math.min(40,h/3):shape==='rectangle'?2:18);if(shape==='outline')c.stroke();else c.fill()}
+ c.restore();
+}
+function backdropTextColor(shape,bg,defaultColor){
+ if(shape==='none'||shape==='underline'||shape==='outline'||shape==='highlight')return defaultColor;
+ return ['#193c5d'].includes(bg)?'#ffffff':'#173a5c';
+}
 function fade(ctx,p,start,fn){const fadeTime=.09;const alpha=Math.max(0,Math.min(1,(p-start)/fadeTime));if(alpha<=0)return;ctx.save();ctx.globalAlpha*=alpha;fn();ctx.restore()}
-function render(p=1){const s=state.scenes[index];const w=CW,h=CH;const theme=state.theme;const fg=theme==='dark'||theme==='blackboard'?'#f4f7ff':'#173a5c';ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle=theme==='blackboard'?'#143d34':theme==='dark'?'#17253a':theme==='clean'?'#ffffff':'#faf6ea';ctx.fillRect(0,0,w,h);if(theme==='notebook'){ctx.strokeStyle='#dadfdd';ctx.lineWidth=2;for(let y=62;y<h;y+=74){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}}if(state.branding.showHeader&&state.branding.header)text(ctx,state.branding.header,540,145,860,state.branding.headerSize,fg,500,/[\u0600-\u06ff]/.test(state.branding.header)?'rtl':'ltr');ctx.fillStyle='#f4d96c';ctx.beginPath();ctx.roundRect(95,540,890,170,16);ctx.fill();fade(ctx,p,0,()=>text(ctx,s.title,540,625,810,57,'#183b62',800,'rtl',2,35));fade(ctx,p,s.qAt/100,()=>text(ctx,s.question,540,850,850,46,fg,600,'rtl',4,30));fade(ctx,p,s.eAt/100,()=>math(ctx,s.equation,540,1105,865,175,fg));if(s.answer)fade(ctx,p,s.aAt/100,()=>{ctx.fillStyle='#e3efda';ctx.beginPath();ctx.roundRect(125,1290,830,190,20);ctx.fill();math(ctx,s.answer,540,1385,775,150,'#173a4b')});if(state.branding.showFooter&&state.branding.footer)text(ctx,state.branding.footer,540,1795,860,state.branding.footerSize,fg,400,/[\u0600-\u06ff]/.test(state.branding.footer)?'rtl':'ltr');drawStickers(ctx,s,p);ctx.restore();updateSeek()}
+function render(p=1){
+ const scene=state.scenes[index],w=CW,h=CH,theme=state.theme;
+ const fg=theme==='dark'||theme==='blackboard'?'#f4f7ff':'#173a5c';
+ ctx.save();ctx.setTransform(1,0,0,1,0,0);
+ ctx.fillStyle=theme==='blackboard'?'#143d34':theme==='dark'?'#17253a':theme==='clean'?'#ffffff':'#faf6ea';ctx.fillRect(0,0,w,h);
+ if(theme==='notebook'){ctx.strokeStyle='#dadfdd';ctx.lineWidth=2;for(let y=62;y<h;y+=74){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}}
+ if(state.branding.showHeader&&state.branding.header)text(ctx,state.branding.header,540,145,860,state.branding.headerSize,fg,500,/[\u0600-\u06ff]/.test(state.branding.header)?'rtl':'ltr');
+ const titleY=h*scene.titleY/100,questionY=h*scene.questionY/100,equationY=h*scene.equationY/100,answerY=h*scene.answerY/100;
+ fade(ctx,p,0,()=>{
+  const titleLayout=measureTextBlock(ctx,scene.title,820,scene.titleSize,800,2,30,150);
+  drawTextBackdrop(ctx,scene.titleBg,540,titleY,890,Math.max(145,titleLayout.height+20),scene.titleBgColor);
+  text(ctx,scene.title,540,titleY,820,scene.titleSize,backdropTextColor(scene.titleBg,scene.titleBgColor,fg),800,'rtl',2,30,150);
+ });
+ fade(ctx,p,scene.qAt/100,()=>{
+  const questionLayout=measureTextBlock(ctx,scene.question,830,scene.questionSize,600,4,30,420);
+  drawTextBackdrop(ctx,scene.questionBg,540,questionY,900,Math.max(110,questionLayout.height+42),scene.questionBgColor);
+  text(ctx,scene.question,540,questionY,830,scene.questionSize,backdropTextColor(scene.questionBg,scene.questionBgColor,fg),600,'rtl',4,30,420);
+ });
+ fade(ctx,p,scene.eAt/100,()=>math(ctx,scene.equation,540,equationY,865*scene.equationScale/100,175*scene.equationScale/100,fg));
+ if(scene.answer)fade(ctx,p,scene.aAt/100,()=>{
+  drawTextBackdrop(ctx,scene.answerBg,540,answerY,830,Math.max(190,190*scene.answerScale/100),scene.answerBgColor);
+  math(ctx,scene.answer,540,answerY,775*scene.answerScale/100,150*scene.answerScale/100,answerFormulaColor(scene));
+ });
+ if(state.branding.showFooter&&state.branding.footer)text(ctx,state.branding.footer,540,1795,860,state.branding.footerSize,fg,400,/[\u0600-\u06ff]/.test(state.branding.footer)?'rtl':'ltr');
+ drawStickers(ctx,scene,p);ctx.restore();updateSeek();
+}
+
 const wait=ms=>new Promise(res=>setTimeout(res,ms));
 async function runPlayback(){if(playing)return;setBusy(true);const token=++playToken;clock=0;let previous=-1;const start=performance.now();try{while(token===playToken&&clock<seconds()){clock=Math.min(seconds(),(performance.now()-start)/1000);const at=atTime(Math.min(clock,seconds()-.001));if(at.index!==previous){stopSceneAudio();previous=at.index;index=at.index;drawControls();playSceneAudio(state.scenes[index].id).catch(()=>{});}render(at.progress);await wait(33)}if(token===playToken){clock=seconds();index=state.scenes.length-1;drawControls();render(1)}}finally{stopSceneAudio();setBusy(false)}}
 $('play').onclick=runPlayback;$('stop').onclick=()=>{playToken++;stopSceneAudio();if(exporting){status('جارٍ إلغاء التصدير…');return}setBusy(false);status('تم إيقاف التشغيل')};
@@ -232,15 +291,16 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catc
 
 // Stickers and drag interactions, coordinates normalized to the 1080x1920 master canvas.
 function currentSticker(){return state.scenes[index].stickers?.find(s=>s.id===selectedStickerId)}
-function refreshStickers(){const el=$('stickerSelect');if(!el)return;el.replaceChildren();const none=document.createElement('option');none.value='';none.textContent='اختر ملصقاً';el.append(none);for(const s of state.scenes[index].stickers||[]){let opt=document.createElement('option');opt.value=s.id;opt.textContent=s.icon+' '+Math.round(s.x*100)+'% / '+Math.round(s.y*100)+'%';el.append(opt)}if(!currentSticker())selectedStickerId=null;el.value=selectedStickerId||'';const s=currentSticker();for(const k of ['Size','Start','End']){const id='sticker'+k;$(id).disabled=!s;$(id).value=s?s[k.toLowerCase()]:({Size:140,Start:10,End:95}[k]);$(id+'Out').textContent=$(id).value+(k==='Size'?'px':'%')}$('stickerAnimation').disabled=!s;$('stickerAnimation').value=s?.animation||'pop';$('removeSticker').disabled=!s}
+function refreshStickers(){const el=$('stickerSelect');if(!el)return;el.replaceChildren();const none=document.createElement('option');none.value='';none.textContent='اختر ملصقاً';el.append(none);for(const s of state.scenes[index].stickers||[]){let opt=document.createElement('option');opt.value=s.id;opt.textContent=s.icon+' '+Math.round(s.x*100)+'% / '+Math.round(s.y*100)+'%';el.append(opt)}if(!currentSticker())selectedStickerId=null;el.value=selectedStickerId||'';const s=currentSticker();for(const k of ['Size','Start','End']){const id='sticker'+k;$(id).disabled=!s;$(id).value=s?s[k.toLowerCase()]:({Size:140,Start:10,End:95}[k]);$(id+'Out').textContent=$(id).value+(k==='Size'?'px':'%')}$('stickerAnimation').disabled=!s;$('stickerAnimation').value=s?.animation||'pop';$('removeSticker').disabled=!s;const quick=$('deleteSelectedSticker');if(quick){quick.disabled=!s;quick.textContent=s?'حذف الملصق المحدد '+s.icon:'حذف الملصق المحدد'}}
 function mutateSticker(key,v){const s=currentSticker();if(!s||playing)return;s[key]=['size','start','end'].includes(key)?Number(v):v;if(s.start>=s.end){if(key==='start')s.end=Math.min(100,s.start+5);else s.start=Math.max(0,s.end-5)}save();refreshStickers();renderCurrent()}
 for(const b of document.querySelectorAll('[data-sticker]'))b.onclick=()=>{if(playing)return;const s=cleanSticker({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),icon:b.dataset.sticker,x:.5,y:.37,start:0,end:100,size:145});state.scenes[index].stickers.push(s);selectedStickerId=s.id;save();refreshStickers();renderCurrent();status('أضف الملصق واسحبه داخل المعاينة')};
+$('deleteSelectedSticker').onclick=()=>$('removeSticker').click();
 $('stickerSelect').onchange=e=>{selectedStickerId=e.target.value||null;refreshStickers();renderCurrent()};$('removeSticker').onclick=()=>{if(!currentSticker())return;if(!confirm('هل تريد حذف هذا الملصق؟'))return;state.scenes[index].stickers=state.scenes[index].stickers.filter(s=>s.id!==selectedStickerId);selectedStickerId=null;save();refreshStickers();renderCurrent()};
 for(const [id,key] of [['stickerSize','size'],['stickerStart','start'],['stickerEnd','end'],['stickerAnimation','animation']])$(id).addEventListener(id==='stickerAnimation'?'change':'input',e=>mutateSticker(key,e.target.value));
 function drawStickers(c,scene,p){for(const s of scene.stickers||[]){const start=s.start/100,end=s.end/100;if(p<start||p>end)continue;const fade=Math.min(1,Math.max(0,(p-start)/.1),end>=1?1:Math.max(0,(end-p)/.08));const x=s.x*CW,y=s.y*CH;c.save();c.globalAlpha*=s.animation==='static'?1:Math.max(0,fade);c.translate(x,y);const t=Math.min(1,Math.max(0,(p-start)/.15));if(s.animation==='pop')c.scale(.45+.55*(1-Math.pow(1-t,3)),.45+.55*(1-Math.pow(1-t,3)));if(s.animation==='spin')c.rotate((1-t)*-.55);c.textAlign='center';c.textBaseline='middle';c.font=`${s.size}px 'Apple Color Emoji','Segoe UI Emoji',system-ui`;c.fillText(s.icon,0,0);c.restore()}}
 let dragSticker=null;
 function stageCoords(e){const r=$('stage').getBoundingClientRect();return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
-$('stage').addEventListener('pointerdown',e=>{if(playing)return;const p=stageCoords(e);const items=[...(state.scenes[index].stickers||[])].reverse();const hit=items.find(s=>Math.abs(s.x-p.x)*CW<s.size*.75&&Math.abs(s.y-p.y)*CH<s.size*.75);if(hit){selectedStickerId=hit.id;dragSticker=hit.id;$('stage').setPointerCapture(e.pointerId);refreshStickers();renderCurrent()}});
+$('stage').addEventListener('pointerdown',e=>{if(playing)return;const p=stageCoords(e);const items=[...(state.scenes[index].stickers||[])].reverse();const hit=items.find(s=>Math.abs(s.x-p.x)*CW<s.size*.75&&Math.abs(s.y-p.y)*CH<s.size*.75);if(hit){selectedStickerId=hit.id;dragSticker=hit.id;$('stage').setPointerCapture(e.pointerId);refreshStickers();renderCurrent();status('تم تحديد الملصق '+hit.icon+'؛ يمكنك سحبه أو الضغط على «حذف الملصق المحدد»')}});
 $('stage').addEventListener('pointermove',e=>{if(!dragSticker||playing)return;const s=currentSticker();if(!s)return;const p=stageCoords(e);s.x=p.x;s.y=p.y;renderCurrent()});
 function dragEnd(){if(dragSticker){dragSticker=null;save();refreshStickers()}}
 $('stage').addEventListener('pointerup',dragEnd);$('stage').addEventListener('pointercancel',dragEnd);

@@ -17,3 +17,11 @@
 .free-tts details{margin-top:12px;background:#fff;border-radius:9px;padding:10px;line-height:1.9;font-size:13px}
 .free-tts summary{cursor:pointer;font-weight:650}.free-tts ol{padding-inline-start:21px;margin:10px 0}
 .free-tts .actions{display:flex;gap:7px;flex-wrap:wrap}.free-tts .actions button{flex:1 1 130px}
+
+/* v0.6: typography and backgrounds editor */
+.typography-panel{background:#f7faff;border-color:#c7daef}.typography-panel h3{font-size:14px;margin:10px 0;color:#193c5d}
+.type-control-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:12px}.type-control-grid section{background:white;padding:12px;border-radius:12px;border:1px solid #e1eaf3;min-width:0}
+.type-control-grid label{margin:11px 0 5px}.type-control-grid output{float:left;color:#426786;font-variant-numeric:tabular-nums}
+.type-control-grid input[type=range]{width:100%;accent-color:#2879bc}.typography-panel>button{margin:12px 0 0;width:100%}
+.preview-sticker-actions{justify-content:center;margin:3px auto 10px}.preview-sticker-actions button{max-width:340px}
+@media(max-width:690px){.type-control-grid{grid-template-columns:1fr}}
