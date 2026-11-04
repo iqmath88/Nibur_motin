@@ -1,16 +1,26 @@
-# Nibor Motion v0.2.0
+# Nibor Motion v0.3.0
 
-Static PWA. Upload all files from the ZIP **directly to the GitHub repository root** (no enclosing folder).
+## Deployment
+Upload **all six files** from this ZIP directly to the **root** of `iqmath88/Nibur_motin` on the `main` branch. Do not upload the ZIP itself or nest files inside a directory.
 
-## Improvements
-- KaTeX equation rendering in browser preview (requires CDN access).
-- Progressive title/question/equation/answer appearance during playback and recording.
-- Scene timeline and LaTeX shortcut buttons.
-- Canvas video capture at 1080x1920. Browser may export WebM rather than MP4.
-- Updated cache/version.
+## Changes
+- An editable MathLive math field synchronized with the LaTeX source input (online library). Fallback to text input if unavailable.
+- MathJax SVG mathematical rendering cached into images, drawn on the **same 1080×1920 Canvas** for preview and exported video.
+- Configurable progressive appearance timing for question, equation and answer.
+- Scene strip and seek bar; save/import/export backward-compatible JSON projects.
+- PNG scene export and MediaRecorder video capture with MP4 if supported, WebM fallback.
+- PWA cache version update; responsive Arabic iPad/Windows layout.
 
-## Known limitations
-- Canvas export uses plain text for equations, so LaTeX visual rendering differs from preview.
-- MP4 and offline KaTeX are not guaranteed; CDN is required for KaTeX.
-- Audio recording and true visual equation editing are not implemented.
-- Test recording and playback on target iPad/Windows browsers before publishing.
+## Important limitations
+- MathLive and MathJax use public CDNs, so initial math library loading requires Internet. Offline viewing can fall back to plain math text. The program shell can work offline after first visit.
+- SVG-to-Canvas mathematical rendering can vary by browser. Verify full formulas and exported video before publication.
+- Video capture occurs in real time. The browser may restrict or fail recording in the background; keep the tab active.
+- MP4 cannot be guaranteed on iPad/Windows; WebM is used if supported and MP4 is not. There is no audio recording yet.
+- The math editing surface uses MathLive when available; it is not an AI symbolic solver.
+
+## Smoke tests
+1. Enter `\\frac{x^2-4}{x-2}=x+2`; confirm its rendering in preview.
+2. Change scene duration and onset sliders; play through all scenes.
+3. Export PNG, play a recorded video, and check equation visual consistency.
+4. Save, reload and import legacy v0.2.0 JSON.
+5. On iPad, verify editing and test export in Safari with screen awake.
