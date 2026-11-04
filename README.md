@@ -1,3 +1,9 @@
+# Nibor Motion v0.5.3 — Voice export safeguard
+
+Fixes: detect scenes containing voice narration text without an audio file; block accidental silent export; clearly indicate whether audio was saved. Browser speech preview is not audio generation. To export a voiced movie, record/import an audio file for each scene or configure a server-side TTS endpoint.
+
+Note: MP4 audio muxing and 1080p resolution on Safari still require testing on the actual device; this patch does not claim to fix platform encoder limitations.
+
 # Nibor Motion v0.5.2 — Scene narration
 
 Upload the **seven static app files** from this ZIP to repository root (not the ZIP itself).
