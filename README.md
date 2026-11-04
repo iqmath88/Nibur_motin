@@ -1,4 +1,4 @@
-# Nibor Motion v0.3.0
+# Nibor Motion v0.4.0
 
 ## Deployment
 Upload **all six files** from this ZIP directly to the **root** of `iqmath88/Nibur_motin` on the `main` branch. Do not upload the ZIP itself or nest files inside a directory.
@@ -24,3 +24,15 @@ Upload **all six files** from this ZIP directly to the **root** of `iqmath88/Nib
 3. Export PNG, play a recorded video, and check equation visual consistency.
 4. Save, reload and import legacy v0.2.0 JSON.
 5. On iPad, verify editing and test export in Safari with screen awake.
+
+## New in v0.4.0
+- Edit the text in the video header and footer for the whole project.
+- Independently show/hide header and footer; restore defaults with one button.
+- Live updates appear in the same Canvas used for preview, PNG, and browser video capture.
+- Branding settings persist in localStorage and project JSON exports/imports. Older v0.1–0.3 projects get default header/footer text automatically.
+- Export declines to record until mathematical SVG assets have loaded, preventing silent plain-text fallback in exported equations.
+
+## Limits
+- Browser-based MP4 export remains device-dependent; WebM may be used instead.
+- MathLive and MathJax still use public CDNs, so visual editing and math rendering require connectivity on a fresh installation.
+- Audio export is not included. Browser testing on the actual iPad remains required.
