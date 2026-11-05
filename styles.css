@@ -28,7 +28,7 @@
 
 .nm-settings{border:1px solid #ccd9e4;border-radius:13px;padding:12px;margin:13px 0;background:#f7fafc;max-width:100%}.nm-settings summary{cursor:pointer;font-weight:750;padding:10px 4px;min-height:44px}.nm-settings label{display:block;margin:10px 0 6px}.nm-settings input:not([type=checkbox]),.nm-settings select{width:100%;min-height:44px}.nm-settings button{min-height:44px}.nm-settings input[type=color]{height:48px}.nm-settings input[type=checkbox]{width:20px;height:20px}.nm-settings p{line-height:1.65}button,[role=button],select{min-height:44px}#stage{touch-action:none}
 
-/* v0.8.0 — mobile-first workspace; canvas/renderer remain unchanged. */
+/* v0.8.1 — mobile-first workspace; canvas/renderer remain unchanged. */
 .mobile-bottom-nav,.mobile-sheet-head{display:none}
 @media(max-width:760px){
  html{scroll-padding-bottom:90px}
@@ -76,3 +76,6 @@
  footer{display:none}
 }
 @media(min-width:761px){.mobile-bottom-nav,.mobile-sheet-head{display:none!important}}
+
+/* Touch-first contextual editing controls; annotations never appear in exports. */
+.visual-editor{background:#f4f8ff;border:1px solid #adc9e9;border-radius:14px;padding:12px;margin:10px 0;direction:rtl}.visual-editor[hidden]{display:none!important}.visual-editor-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.visual-editor-head strong{font-size:14px}.visual-editor button{min-height:44px}.visual-editor input[type=range]{width:100%;min-height:44px;accent-color:#3278c0}.visual-editor label{display:block;font-weight:700;margin:8px 0}.visual-editor .muted{margin:6px 0}.visual-editor #visualDelete{background:#ffe9e6;color:#8a2723;width:100%;margin-top:8px}#stage{touch-action:none;user-select:none;-webkit-user-select:none}

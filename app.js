@@ -20,14 +20,14 @@ function cleanBranding(b){return {header:brandingText(b?.header,brandingDefaults
 
 const bounded=(x,min,max,fallback)=>{let n=Number(x);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback};
 function makeSceneId(){return (crypto.randomUUID?.()||'scene-'+Date.now()+'-'+Math.random().toString(36).slice(2))}
-const cleanScene=s=>({ ...NM.mathanim.settings(s), ...NM.overlays.scene(s), resultEffect:NM.audiomix.effect(s?.resultEffect),voiceDuration:bounded(s?.voiceDuration,0,120,0), id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),titleSize:bounded(s?.titleSize,30,100,57),questionSize:bounded(s?.questionSize,30,90,46),equationScale:bounded(s?.equationScale,60,150,100),answerScale:bounded(s?.answerScale,60,150,100),titleBg:TYPE_STYLES.includes(s?.titleBg)?s.titleBg:'rounded',questionBg:TYPE_STYLES.includes(s?.questionBg)?s.questionBg:'none',answerBg:TYPE_STYLES.includes(s?.answerBg)?s.answerBg:'rounded',titleBgColor:cleanColor(s?.titleBgColor,'#f4d96c'),questionBgColor:cleanColor(s?.questionBgColor,'#cfe7fa'),answerBgColor:cleanColor(s?.answerBgColor,'#e3efda'),titleY:bounded(s?.titleY,17,47,32.5),questionY:bounded(s?.questionY,28,68,44.3),equationY:bounded(s?.equationY,40,79,57.6),answerY:bounded(s?.answerY,55,90,72.1),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
+const cleanScene=s=>({ ...NM.mathanim.settings(s), ...NM.overlays.scene(s), resultEffect:NM.audiomix.effect(s?.resultEffect),voiceDuration:bounded(s?.voiceDuration,0,120,0), id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),titleSize:bounded(s?.titleSize,30,100,57),questionSize:bounded(s?.questionSize,30,90,46),equationScale:bounded(s?.equationScale,60,150,100),answerScale:bounded(s?.answerScale,60,150,100),titleBg:TYPE_STYLES.includes(s?.titleBg)?s.titleBg:'rounded',questionBg:TYPE_STYLES.includes(s?.questionBg)?s.questionBg:'none',answerBg:TYPE_STYLES.includes(s?.answerBg)?s.answerBg:'rounded',titleBgColor:cleanColor(s?.titleBgColor,'#f4d96c'),questionBgColor:cleanColor(s?.questionBgColor,'#cfe7fa'),answerBgColor:cleanColor(s?.answerBgColor,'#e3efda'),titleX:bounded(s?.titleX,12,88,50),questionX:bounded(s?.questionX,12,88,50),equationX:bounded(s?.equationX,12,88,50),answerX:bounded(s?.answerX,12,88,50),titleY:bounded(s?.titleY,17,47,32.5),questionY:bounded(s?.questionY,28,68,44.3),equationY:bounded(s?.equationY,40,79,57.6),answerY:bounded(s?.answerY,55,90,72.1),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
 function cleanSticker(s){return {id:String(s?.id||Date.now()+'-'+Math.random()),icon:['❓','❗','💡','✅','✏️','🎯','➡️','⭐','⭕','⚠️'].includes(s?.icon)?s.icon:'❓',x:bounded(s?.x,0,1,.5),y:bounded(s?.y,0,1,.38),size:bounded(s?.size,45,380,140),start:bounded(s?.start,0,95,10),end:bounded(s?.end,5,100,95),animation:['pop','fade','spin','static'].includes(s?.animation)?s.animation:'pop',effect:NM.audiomix.effect(s?.effect)}}
 function cleanAudio(a){return {...NM.audiomix.settings(a),offset:bounded(a?.offset,0,30,0),volume:bounded(a?.volume,0,1,1)}}
 function cleanProject(x){if(!Array.isArray(x?.scenes)||!x.scenes.length||x.scenes.length>100)throw Error('ملف المشروع غير صالح');return {projectId:String(x.projectId||makeSceneId()),name:String(x.name||'مشروع').slice(0,120),theme:themes.includes(x.theme)?x.theme:'notebook',branding:cleanBranding(x.branding),fonts:NM.fonts.clean(x.fonts),captions:NM.captions.settings(x.captions),overlays:NM.overlays.project(x.overlays),audio:cleanAudio(x.audio),scenes:x.scenes.map(cleanScene)}}
 let state={projectId:makeSceneId(),name:'حل معادلة لوغاريتمية',theme:'notebook',branding:cleanBranding(brandingDefaults),fonts:NM.fonts.clean(),captions:NM.captions.settings(),overlays:NM.overlays.project(),audio:cleanAudio(null),scenes:defaults.map(cleanScene)};
 try{const saved=JSON.parse(localStorage.getItem('nibor-motion-v1'));if(saved)state=cleanProject(saved)}catch(e){console.warn('تعذر استعادة المشروع',e)}
 NM.project=state;let subtitleTimeline=[],audioTimeline=null;const rebuildTimeline=()=>{NM.project=state;subtitleTimeline=NM.captions.schedule(state,id=>voiceBlobs?.has(id));audioTimeline=NM.audiomix.timeline(state,voiceBlobs||new Map());};
-let selectedStickerId=null;let index=0,playing=false,exporting=false,playToken=0,clock=0,mathfieldReady=false,fieldSync=false,renderTicket=0;
+let selectedStickerId=null,selectedElement=null,elementGesture=null;let index=0,playing=false,exporting=false,playToken=0,clock=0,mathfieldReady=false,fieldSync=false,renderTicket=0;
 const ctx=$('stage').getContext('2d',{alpha:false});const CW=1080,CH=1920;
 const mathCache=new Map();let mathReady=false;
 const mathKey=(raw,color)=>color+'|'+String(raw||'').trim();
@@ -52,18 +52,18 @@ function sceneStart(i){return state.scenes.slice(0,i).reduce((a,s)=>a+s.duration
 function atTime(t){let passed=0;for(let i=0;i<state.scenes.length;i++){let d=state.scenes[i].duration;if(t<passed+d || i===state.scenes.length-1)return {index:i,progress:Math.max(0,Math.min(1,(t-passed)/d))};passed+=d}return {index:0,progress:0}}
 function fmt(t){t=Math.max(0,Math.floor(t));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
 function setBusy(v){playing=v;$('play').disabled=v;$('export').disabled=v;$('png').disabled=v;$('stop').disabled=!v}
-function drawControls(){const s=state.scenes[index];syncExtraControls();$('scenes').replaceChildren();state.scenes.forEach((scene,i)=>{const el=document.createElement('button');el.type='button';el.className='scene'+(i===index?' active':'');const t=document.createElement('span');t.textContent=`${i+1}. ${scene.title||'مشهد جديد'}`;const d=document.createElement('small');d.textContent=`${scene.duration} ث`;el.append(t,d);el.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+state.scenes[i].duration;stopSceneAudio();drawControls();render(1)};$('scenes').append(el)});$('timeline').replaceChildren();state.scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=i===index?'active':'';b.textContent=`${i+1} · ${s.duration}ث`;b.style.flexGrow=String(s.duration);b.onclick=()=>{if(playing)return;index=i;clock=sceneStart(i)+s.duration;stopSceneAudio();drawControls();render(1)};$('timeline').append(b)});for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).value=s[key];syncTypographyControls();for(const pair of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']])$(pair[1]).textContent=s[pair[0]]+'%';$('theme').value=state.theme;$('project').value=state.name;$('counter').textContent=`${index+1} / ${state.scenes.length}`;updateSeek();syncMathField(s.equation);refreshStickers();syncSceneVoiceUI()}
-const TYPO_FIELDS=['titleSize','questionSize','equationScale','answerScale','titleY','questionY','equationY','answerY','titleBg','questionBg','answerBg','titleBgColor','questionBgColor','answerBgColor'];
+function drawControls(){const s=state.scenes[index];syncExtraControls();$('scenes').replaceChildren();state.scenes.forEach((scene,i)=>{const el=document.createElement('button');el.type='button';el.className='scene'+(i===index?' active':'');const t=document.createElement('span');t.textContent=`${i+1}. ${scene.title||'مشهد جديد'}`;const d=document.createElement('small');d.textContent=`${scene.duration} ث`;el.append(t,d);el.onclick=()=>{if(playing)return;index=i;selectedElement=null;clock=sceneStart(i)+state.scenes[i].duration;stopSceneAudio();drawControls();render(1)};$('scenes').append(el)});$('timeline').replaceChildren();state.scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=i===index?'active':'';b.textContent=`${i+1} · ${s.duration}ث`;b.style.flexGrow=String(s.duration);b.onclick=()=>{if(playing)return;index=i;selectedElement=null;clock=sceneStart(i)+s.duration;stopSceneAudio();drawControls();render(1)};$('timeline').append(b)});for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).value=s[key];syncTypographyControls();for(const pair of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']])$(pair[1]).textContent=s[pair[0]]+'%';$('theme').value=state.theme;$('project').value=state.name;$('counter').textContent=`${index+1} / ${state.scenes.length}`;updateSeek();syncMathField(s.equation);refreshStickers();syncVisualPanel();syncSceneVoiceUI()}
+const TYPO_FIELDS=['titleSize','questionSize','equationScale','answerScale','titleY','questionY','equationY','answerY','titleX','questionX','equationX','answerX','titleBg','questionBg','answerBg','titleBgColor','questionBgColor','answerBgColor'];
 function syncTypographyControls(){
  const scene=state.scenes[index];
- for(const key of TYPO_FIELDS){const el=$(key);if(!el)continue;el.value=scene[key];const out=$(key+'Out');if(out)out.textContent=scene[key]+(key.endsWith('Y')||key.endsWith('Scale')?'%':key.endsWith('Size')?'px':'')}
+ for(const key of TYPO_FIELDS){const el=$(key);if(!el)continue;el.value=scene[key];const out=$(key+'Out');if(out)out.textContent=scene[key]+(key.endsWith('Y')||key.endsWith('X')||key.endsWith('Scale')?'%':key.endsWith('Size')?'px':'')}
 }
 function updateTypography(key,value){
  if(playing)return;
  const scene=state.scenes[index];
  if(key.endsWith('Bg'))scene[key]=TYPE_STYLES.includes(value)?value:'none';
  else if(key.endsWith('BgColor'))scene[key]=cleanColor(value,scene[key]);
- else {const ranges={titleSize:[30,100],questionSize:[30,90],equationScale:[60,150],answerScale:[60,150],titleY:[17,47],questionY:[28,68],equationY:[40,79],answerY:[55,90]};const [min,max]=ranges[key];scene[key]=bounded(value,min,max,scene[key]);}
+ else {const ranges={titleSize:[30,100],questionSize:[30,90],equationScale:[60,150],answerScale:[60,150],titleY:[17,47],questionY:[28,68],equationY:[40,79],answerY:[55,90],titleX:[12,88],questionX:[12,88],equationX:[12,88],answerX:[12,88]};const [min,max]=ranges[key];scene[key]=bounded(value,min,max,scene[key]);}
  save();syncTypographyControls();scheduleMathWarm();renderCurrent();
 }
 for(const key of TYPO_FIELDS){const el=$(key);if(el)el.addEventListener(el.tagName==='SELECT'?'change':'input',e=>updateTypography(key,e.target.value))}
@@ -202,6 +202,44 @@ function backdropTextColor(shape,bg,defaultColor){
  return ['#193c5d'].includes(bg)?'#ffffff':'#173a5c';
 }
 function fade(ctx,p,start,fn){const fadeTime=.09;const alpha=Math.max(0,Math.min(1,(p-start)/fadeTime));if(alpha<=0)return;ctx.save();ctx.globalAlpha*=alpha;fn();ctx.restore()}
+// Contextual visual editor uses the same coordinates as the export canvas.
+const ELEMENT_KEYS={title:['titleX','titleY','titleSize'],question:['questionX','questionY','questionSize'],equation:['equationX','equationY','equationScale'],answer:['answerX','answerY','answerScale']};
+const ELEMENT_LABELS={title:'العنوان',question:'السؤال',equation:'المعادلة',answer:'النتيجة',sticker:'الملصق'};
+function elementBounds(kind,scene){
+ if(kind==='sticker'){
+  const st=currentSticker();return st?{cx:st.x*CW,cy:st.y*CH,w:st.size*1.5,h:st.size*1.5}:null;
+ }
+ if(!scene[kind])return null;
+ const x=CW*scene[kind+'X']/100,y=CH*scene[kind+'Y']/100;
+ const width=kind==='title'?890:kind==='question'?900:kind==='equation'?865*scene.equationScale/100:830*scene.answerScale/100;
+ const height=kind==='title'?Math.max(145,scene.titleSize*2.6):kind==='question'?Math.max(125,scene.questionSize*5):kind==='equation'?175*scene.equationScale/100:190*scene.answerScale/100;
+ return {cx:x,cy:y,w:Math.min(960,width),h:height};
+}
+function selectionBox(c,scene){
+ if(!selectedElement||playing||exporting)return;
+ const b=elementBounds(selectedElement,scene);if(!b)return;
+ c.save();c.strokeStyle='#3189f5';c.lineWidth=5;c.setLineDash([16,9]);
+ c.strokeRect(b.cx-b.w/2,b.cy-b.h/2,b.w,b.h);c.setLineDash([]);
+ const hx=b.cx+b.w/2,hy=b.cy+b.h/2;
+ c.fillStyle='#fff';c.strokeStyle='#246bb8';c.lineWidth=6;c.beginPath();c.arc(hx,hy,22,0,Math.PI*2);c.fill();c.stroke();c.restore();
+}
+function selectVisualElement(type){selectedElement=type;selectedStickerId=type==='sticker'?selectedStickerId:null;syncVisualPanel();renderCurrent()}
+function syncVisualPanel(){
+ const panel=$('visualEditor');if(!panel)return;
+ const scene=state.scenes[index];const b=selectedElement&&elementBounds(selectedElement,scene);
+ panel.hidden=!b;if(!b)return;
+ $('visualName').textContent='العنصر المحدد: '+ELEMENT_LABELS[selectedElement];
+ const st=selectedElement==='sticker'?currentSticker():null;
+ const value=st?st.size:scene[ELEMENT_KEYS[selectedElement][2]];
+ const limits=selectedElement==='sticker'?[45,380]:selectedElement==='title'?[30,100]:selectedElement==='question'?[30,90]:[60,150];
+ $('visualSize').min=limits[0];$('visualSize').max=limits[1];$('visualSize').value=value;
+ $('visualSizeOut').textContent=value+(selectedElement==='sticker'||['title','question'].includes(selectedElement)?'px':'%');
+ $('visualDelete').hidden=selectedElement!=='sticker';
+}
+function visualResize(value){if(!selectedElement||playing)return;const scene=state.scenes[index];
+ if(selectedElement==='sticker'){const st=currentSticker();if(!st)return;st.size=bounded(value,45,380,st.size);refreshStickers();}
+ else {const key=ELEMENT_KEYS[selectedElement][2];const limits=selectedElement==='title'?[30,100]:selectedElement==='question'?[30,90]:[60,150];scene[key]=bounded(value,...limits,scene[key]);syncTypographyControls();}
+ save();syncVisualPanel();renderCurrent();}
 function render(p=1,options={guides:!exporting}){
  const scene=state.scenes[index],w=CW,h=CH,theme=state.theme;
  const fg=theme==='dark'||theme==='blackboard'?'#f4f7ff':'#173a5c';
@@ -214,24 +252,24 @@ function render(p=1,options={guides:!exporting}){
  const titleY=h*scene.titleY/100,questionY=h*scene.questionY/100,equationY=h*scene.equationY/100,answerY=h*scene.answerY/100;
  if(!isHook)fade(ctx,p,0,()=>{
   const titleLayout=measureTextBlock(ctx,scene.title,820,scene.titleSize,800,2,30,150);
-  drawTextBackdrop(ctx,scene.titleBg,540,titleY,890,Math.max(145,titleLayout.height+20),scene.titleBgColor);
-  text(ctx,scene.title,540,titleY,820,scene.titleSize,backdropTextColor(scene.titleBg,scene.titleBgColor,fg),800,'rtl',2,30,150);
+  drawTextBackdrop(ctx,scene.titleBg,CW*scene.titleX/100,titleY,890,Math.max(145,titleLayout.height+20),scene.titleBgColor);
+  text(ctx,scene.title,CW*scene.titleX/100,titleY,820,scene.titleSize,backdropTextColor(scene.titleBg,scene.titleBgColor,fg),800,'rtl',2,30,150);
  });
  if(!isHook)fade(ctx,p,scene.qAt/100,()=>{
   const questionLayout=measureTextBlock(ctx,scene.question,830,scene.questionSize,600,4,30,420);
-  drawTextBackdrop(ctx,scene.questionBg,540,questionY,900,Math.max(110,questionLayout.height+42),scene.questionBgColor);
-  text(ctx,scene.question,540,questionY,830,scene.questionSize,backdropTextColor(scene.questionBg,scene.questionBgColor,fg),600,'rtl',4,30,420);
+  drawTextBackdrop(ctx,scene.questionBg,CW*scene.questionX/100,questionY,900,Math.max(110,questionLayout.height+42),scene.questionBgColor);
+  text(ctx,scene.question,CW*scene.questionX/100,questionY,830,scene.questionSize,backdropTextColor(scene.questionBg,scene.questionBgColor,fg),600,'rtl',4,30,420);
  });
- if(!isHook)NM.mathanim.draw(ctx,scene,p,index>0?state.scenes[index-1]:null,(tex,color)=>math(ctx,tex,540,equationY,865*scene.equationScale/100,175*scene.equationScale/100,color),fg,state.captions.highlight);
+ if(!isHook)NM.mathanim.draw(ctx,scene,p,index>0?state.scenes[index-1]:null,(tex,color)=>math(ctx,tex,CW*scene.equationX/100,equationY,865*scene.equationScale/100,175*scene.equationScale/100,color),fg,state.captions.highlight);
  if(!isHook&&scene.answer)fade(ctx,p,scene.aAt/100,()=>{
-  drawTextBackdrop(ctx,scene.answerBg,540,answerY,830,Math.max(190,190*scene.answerScale/100),scene.answerBgColor);
-  math(ctx,scene.answer,540,answerY,775*scene.answerScale/100,150*scene.answerScale/100,answerFormulaColor(scene));
+  drawTextBackdrop(ctx,scene.answerBg,CW*scene.answerX/100,answerY,830,Math.max(190,190*scene.answerScale/100),scene.answerBgColor);
+  math(ctx,scene.answer,CW*scene.answerX/100,answerY,775*scene.answerScale/100,150*scene.answerScale/100,answerFormulaColor(scene));
  });
  if(!isHook&&state.branding.showFooter&&state.branding.footer)text(ctx,state.branding.footer,540,1795,860,state.branding.footerSize,fg,400,/[\u0600-\u06ff]/.test(state.branding.footer)?'rtl':'ltr');
  NM.overlays.progress(ctx,state.overlays,absoluteTime,seconds());
  NM.captions.draw(ctx,state,subtitleTimeline,absoluteTime);
  drawStickers(ctx,scene,p);
- if(options.guides){NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
+ if(options.guides){selectionBox(ctx,scene);NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
  ctx.restore();updateSeek();
 }
 
@@ -307,17 +345,58 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catc
 function currentSticker(){return state.scenes[index].stickers?.find(s=>s.id===selectedStickerId)}
 function refreshStickers(){const el=$('stickerSelect');if(!el)return;el.replaceChildren();const none=document.createElement('option');none.value='';none.textContent='اختر ملصقاً';el.append(none);for(const s of state.scenes[index].stickers||[]){let opt=document.createElement('option');opt.value=s.id;opt.textContent=s.icon+' '+Math.round(s.x*100)+'% / '+Math.round(s.y*100)+'%';el.append(opt)}if(!currentSticker())selectedStickerId=null;el.value=selectedStickerId||'';const s=currentSticker();for(const k of ['Size','Start','End']){const id='sticker'+k;$(id).disabled=!s;$(id).value=s?s[k.toLowerCase()]:({Size:140,Start:10,End:95}[k]);$(id+'Out').textContent=$(id).value+(k==='Size'?'px':'%')}$('stickerEffect').disabled=!s;$('stickerEffect').value=s?.effect||'none';$('stickerAnimation').disabled=!s;$('stickerAnimation').value=s?.animation||'pop';$('removeSticker').disabled=!s;const quick=$('deleteSelectedSticker');if(quick){quick.disabled=!s;quick.textContent=s?'حذف الملصق المحدد '+s.icon:'حذف الملصق المحدد'}}
 function mutateSticker(key,v){const s=currentSticker();if(!s||playing)return;s[key]=['size','start','end'].includes(key)?Number(v):v;if(s.start>=s.end){if(key==='start')s.end=Math.min(100,s.start+5);else s.start=Math.max(0,s.end-5)}save();refreshStickers();renderCurrent()}
-for(const b of document.querySelectorAll('[data-sticker]'))b.onclick=()=>{if(playing)return;const s=cleanSticker({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),icon:b.dataset.sticker,x:.5,y:.37,start:0,end:100,size:145});state.scenes[index].stickers.push(s);selectedStickerId=s.id;save();refreshStickers();renderCurrent();status('أضف الملصق واسحبه داخل المعاينة')};
+for(const b of document.querySelectorAll('[data-sticker]'))b.onclick=()=>{if(playing)return;const s=cleanSticker({id:crypto.randomUUID?crypto.randomUUID():String(Date.now()),icon:b.dataset.sticker,x:.5,y:.37,start:0,end:100,size:145});state.scenes[index].stickers.push(s);selectedStickerId=s.id;selectedElement='sticker';save();refreshStickers();syncVisualPanel();renderCurrent();status('أضف الملصق واسحبه داخل المعاينة')};
 $('deleteSelectedSticker').onclick=()=>$('removeSticker').click();
-$('stickerSelect').onchange=e=>{selectedStickerId=e.target.value||null;refreshStickers();renderCurrent()};$('removeSticker').onclick=()=>{if(!currentSticker())return;if(!confirm('هل تريد حذف هذا الملصق؟'))return;state.scenes[index].stickers=state.scenes[index].stickers.filter(s=>s.id!==selectedStickerId);selectedStickerId=null;save();refreshStickers();renderCurrent()};
+$('stickerSelect').onchange=e=>{selectedStickerId=e.target.value||null;selectedElement=selectedStickerId?'sticker':null;refreshStickers();syncVisualPanel();renderCurrent()};$('removeSticker').onclick=()=>{if(!currentSticker())return;if(!confirm('هل تريد حذف هذا الملصق؟'))return;state.scenes[index].stickers=state.scenes[index].stickers.filter(s=>s.id!==selectedStickerId);selectedStickerId=null;selectedElement=null;save();refreshStickers();syncVisualPanel();renderCurrent()};
 for(const [id,key] of [['stickerSize','size'],['stickerStart','start'],['stickerEnd','end'],['stickerAnimation','animation'],['stickerEffect','effect']])$(id).addEventListener(['stickerAnimation','stickerEffect'].includes(id)?'change':'input',e=>mutateSticker(key,e.target.value));
 function drawStickers(c,scene,p){for(const s of scene.stickers||[]){const start=s.start/100,end=s.end/100;if(p<start||p>end)continue;const fade=Math.min(1,Math.max(0,(p-start)/.1),end>=1?1:Math.max(0,(end-p)/.08));const x=s.x*CW,y=s.y*CH;c.save();c.globalAlpha*=s.animation==='static'?1:Math.max(0,fade);c.translate(x,y);const t=Math.min(1,Math.max(0,(p-start)/.15));if(s.animation==='pop')c.scale(.45+.55*(1-Math.pow(1-t,3)),.45+.55*(1-Math.pow(1-t,3)));if(s.animation==='spin')c.rotate((1-t)*-.55);c.textAlign='center';c.textBaseline='middle';c.font=`${s.size}px 'Apple Color Emoji','Segoe UI Emoji',system-ui`;c.fillText(s.icon,0,0);c.restore()}}
 let dragSticker=null;
 function stageCoords(e){const r=$('stage').getBoundingClientRect();return {x:Math.max(0,Math.min(1,(e.clientX-r.left)/r.width)),y:Math.max(0,Math.min(1,(e.clientY-r.top)/r.height))}}
-$('stage').addEventListener('pointerdown',e=>{if(playing)return;const p=stageCoords(e);const items=[...(state.scenes[index].stickers||[])].reverse();const hit=items.find(s=>Math.abs(s.x-p.x)*CW<s.size*.75&&Math.abs(s.y-p.y)*CH<s.size*.75);if(hit){selectedStickerId=hit.id;dragSticker=hit.id;$('stage').setPointerCapture(e.pointerId);refreshStickers();renderCurrent();status('تم تحديد الملصق '+hit.icon+'؛ يمكنك سحبه أو الضغط على «حذف الملصق المحدد»')}});
-$('stage').addEventListener('pointermove',e=>{if(!dragSticker||playing)return;const s=currentSticker();if(!s)return;const p=stageCoords(e);s.x=p.x;s.y=p.y;renderCurrent()});
-function dragEnd(){if(dragSticker){dragSticker=null;save();refreshStickers()}}
+function visualHit(p){
+ const s=state.scenes[index],x=p.x*CW,y=p.y*CH;
+ const stickers=[...(s.stickers||[])].reverse();
+ const st=stickers.find(item=>Math.abs(item.x*CW-x)<item.size*.75&&Math.abs(item.y*CH-y)<item.size*.75);
+ if(st)return {kind:'sticker',st};
+ for(const kind of ['answer','equation','question','title']){
+  const b=elementBounds(kind,s);if(b&&Math.abs(x-b.cx)<=b.w/2&&Math.abs(y-b.cy)<=b.h/2)return {kind};
+ }
+ return null;
+}
+$('stage').addEventListener('pointerdown',e=>{
+ if(playing)return;
+ const p=stageCoords(e),px=p.x*CW,py=p.y*CH;
+ const old=selectedElement&&elementBounds(selectedElement,state.scenes[index]);
+ const resize=!!old&&Math.hypot(px-(old.cx+old.w/2),py-(old.cy+old.h/2))<65;
+ const hit=resize?{kind:selectedElement,st:currentSticker()}:visualHit(p);
+ if(!hit){selectedElement=null;selectedStickerId=null;syncVisualPanel();renderCurrent();return}
+ selectedElement=hit.kind;
+ if(hit.kind==='sticker')selectedStickerId=hit.st?.id||selectedStickerId;
+ const bounds=elementBounds(hit.kind,state.scenes[index]);
+ elementGesture={pointerId:e.pointerId,kind:hit.kind,mode:resize?'resize':'move',startX:px,startY:py,originalX:bounds.cx,originalY:bounds.cy,originalSize:hit.kind==='sticker'?currentSticker()?.size:state.scenes[index][ELEMENT_KEYS[hit.kind][2]],sizeLimit:Math.max(70,bounds.w/2)};
+ $('stage').setPointerCapture(e.pointerId);refreshStickers();syncVisualPanel();renderCurrent();
+});
+$('stage').addEventListener('pointermove',e=>{
+ if(!elementGesture||e.pointerId!==elementGesture.pointerId||playing)return;
+ const p=stageCoords(e),g=elementGesture,scene=state.scenes[index];
+ if(g.mode==='resize'){
+  const ratio=1+((p.x*CW-g.startX)+(p.y*CH-g.startY))/g.sizeLimit;
+  visualResize(Math.round(g.originalSize*Math.max(.2,ratio)));
+ }else if(g.kind==='sticker'){
+  const st=currentSticker();if(!st)return;
+  st.x=bounded((g.originalX+(p.x*CW-g.startX))/CW,.04,.96,st.x);
+  st.y=bounded((g.originalY+(p.y*CH-g.startY))/CH,.04,.96,st.y);
+ }else{
+  const [kx,ky]=ELEMENT_KEYS[g.kind];const limitY={title:[17,47],question:[28,68],equation:[40,79],answer:[55,90]}[g.kind];
+  scene[kx]=bounded((g.originalX+(p.x*CW-g.startX))/CW*100,12,88,scene[kx]);
+  scene[ky]=bounded((g.originalY+(p.y*CH-g.startY))/CH*100,...limitY,scene[ky]);
+ }
+ renderCurrent();
+});
+function dragEnd(e){if(!elementGesture||e.pointerId!==elementGesture.pointerId)return;elementGesture=null;save();syncTypographyControls();refreshStickers();syncVisualPanel();renderCurrent()}
 $('stage').addEventListener('pointerup',dragEnd);$('stage').addEventListener('pointercancel',dragEnd);
+$('visualSize').addEventListener('input',e=>visualResize(Number(e.target.value)));
+$('visualDelete').addEventListener('click',()=>$('removeSticker').click());
+$('visualDone').addEventListener('click',()=>{selectedElement=null;selectedStickerId=null;syncVisualPanel();renderCurrent()});
 // Voice clips are kept by stable scene ID and project ID, never embedded in JSON.
 let voiceLoadPromise=Promise.resolve();const voiceBlobs=new Map();const voiceUrls=new Map();let activeRecorder=null,micStream=null,previewVoice=null,previewVoiceUrl=null;
 const projectKey=()=>state.projectId;
