@@ -20,7 +20,7 @@ function cleanBranding(b){return {header:brandingText(b?.header,brandingDefaults
 
 const bounded=(x,min,max,fallback)=>{let n=Number(x);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback};
 function makeSceneId(){return (crypto.randomUUID?.()||'scene-'+Date.now()+'-'+Math.random().toString(36).slice(2))}
-const cleanScene=s=>({ ...NM.mathanim.settings(s), ...NM.overlays.scene(s), resultEffect:NM.audiomix.effect(s?.resultEffect),voiceDuration:bounded(s?.voiceDuration,0,120,0), id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),titleSize:bounded(s?.titleSize,30,100,57),questionSize:bounded(s?.questionSize,30,90,46),equationScale:bounded(s?.equationScale,60,150,100),answerScale:bounded(s?.answerScale,60,150,100),titleBg:TYPE_STYLES.includes(s?.titleBg)?s.titleBg:'rounded',questionBg:TYPE_STYLES.includes(s?.questionBg)?s.questionBg:'none',answerBg:TYPE_STYLES.includes(s?.answerBg)?s.answerBg:'rounded',titleBgColor:cleanColor(s?.titleBgColor,'#f4d96c'),questionBgColor:cleanColor(s?.questionBgColor,'#cfe7fa'),answerBgColor:cleanColor(s?.answerBgColor,'#e3efda'),titleX:bounded(s?.titleX,12,88,50),questionX:bounded(s?.questionX,12,88,50),equationX:bounded(s?.equationX,12,88,50),answerX:bounded(s?.answerX,12,88,50),titleY:bounded(s?.titleY,17,47,32.5),questionY:bounded(s?.questionY,28,68,44.3),equationY:bounded(s?.equationY,40,79,57.6),answerY:bounded(s?.answerY,55,90,72.1),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
+const cleanScene=s=>({ ...NM.mathanim.settings(s), ...NM.overlays.scene(s), resultEffect:NM.audiomix.effect(s?.resultEffect),voiceDuration:bounded(s?.voiceDuration,0,120,0), id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],elements:NM.freeEditor.clean(s?.elements),title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),titleSize:bounded(s?.titleSize,30,100,57),questionSize:bounded(s?.questionSize,30,90,46),equationScale:bounded(s?.equationScale,60,150,100),answerScale:bounded(s?.answerScale,60,150,100),titleBg:TYPE_STYLES.includes(s?.titleBg)?s.titleBg:'rounded',questionBg:TYPE_STYLES.includes(s?.questionBg)?s.questionBg:'none',answerBg:TYPE_STYLES.includes(s?.answerBg)?s.answerBg:'rounded',titleBgColor:cleanColor(s?.titleBgColor,'#f4d96c'),questionBgColor:cleanColor(s?.questionBgColor,'#cfe7fa'),answerBgColor:cleanColor(s?.answerBgColor,'#e3efda'),titleX:bounded(s?.titleX,12,88,50),questionX:bounded(s?.questionX,12,88,50),equationX:bounded(s?.equationX,12,88,50),answerX:bounded(s?.answerX,12,88,50),titleY:bounded(s?.titleY,17,47,32.5),questionY:bounded(s?.questionY,28,68,44.3),equationY:bounded(s?.equationY,40,79,57.6),answerY:bounded(s?.answerY,55,90,72.1),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
 function cleanSticker(s){return {id:String(s?.id||Date.now()+'-'+Math.random()),icon:['❓','❗','💡','✅','✏️','🎯','➡️','⭐','⭕','⚠️'].includes(s?.icon)?s.icon:'❓',x:bounded(s?.x,0,1,.5),y:bounded(s?.y,0,1,.38),size:bounded(s?.size,45,380,140),start:bounded(s?.start,0,95,10),end:bounded(s?.end,5,100,95),animation:['pop','fade','spin','static'].includes(s?.animation)?s.animation:'pop',effect:NM.audiomix.effect(s?.effect)}}
 function cleanAudio(a){return {...NM.audiomix.settings(a),offset:bounded(a?.offset,0,30,0),volume:bounded(a?.volume,0,1,1)}}
 function cleanProject(x){if(!Array.isArray(x?.scenes)||!x.scenes.length||x.scenes.length>100)throw Error('ملف المشروع غير صالح');return {projectId:String(x.projectId||makeSceneId()),name:String(x.name||'مشروع').slice(0,120),theme:themes.includes(x.theme)?x.theme:'notebook',branding:cleanBranding(x.branding),fonts:NM.fonts.clean(x.fonts),captions:NM.captions.settings(x.captions),overlays:NM.overlays.project(x.overlays),audio:cleanAudio(x.audio),scenes:x.scenes.map(cleanScene)}}
@@ -46,13 +46,13 @@ const answerFormulaColor=s=>['rounded','rectangle'].includes(s.answerBg)?backdro
 let mathDebounce=null;
 function scheduleMathWarm(){clearTimeout(mathDebounce);mathDebounce=setTimeout(()=>{prewarm();trimMathCache()},250)}
 const status=msg=>{$('status').textContent=msg};
-function save(){NM.project=state;rebuildTimeline();try{localStorage.setItem('nibor-motion-v1',JSON.stringify(state))}catch(e){status('تعذر الحفظ على الجهاز. صدّر المشروع JSON للاحتفاظ بنسخة احتياطية.')}}
+function save(){NM.project=state;rebuildTimeline();NM.freeEditor.track(state,index);try{localStorage.setItem('nibor-motion-v1',JSON.stringify(state))}catch(e){status('تعذر الحفظ على الجهاز. صدّر المشروع JSON للاحتفاظ بنسخة احتياطية.')}}
 function seconds(){return state.scenes.reduce((a,s)=>a+s.duration,0)}
 function sceneStart(i){return state.scenes.slice(0,i).reduce((a,s)=>a+s.duration,0)}
 function atTime(t){let passed=0;for(let i=0;i<state.scenes.length;i++){let d=state.scenes[i].duration;if(t<passed+d || i===state.scenes.length-1)return {index:i,progress:Math.max(0,Math.min(1,(t-passed)/d))};passed+=d}return {index:0,progress:0}}
 function fmt(t){t=Math.max(0,Math.floor(t));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')}
 function setBusy(v){playing=v;$('play').disabled=v;$('export').disabled=v;$('png').disabled=v;$('stop').disabled=!v}
-function drawControls(){const s=state.scenes[index];syncExtraControls();$('scenes').replaceChildren();state.scenes.forEach((scene,i)=>{const el=document.createElement('button');el.type='button';el.className='scene'+(i===index?' active':'');const t=document.createElement('span');t.textContent=`${i+1}. ${scene.title||'مشهد جديد'}`;const d=document.createElement('small');d.textContent=`${scene.duration} ث`;el.append(t,d);el.onclick=()=>{if(playing)return;index=i;selectedElement=null;clock=sceneStart(i)+state.scenes[i].duration;stopSceneAudio();drawControls();render(1)};$('scenes').append(el)});$('timeline').replaceChildren();state.scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=i===index?'active':'';b.textContent=`${i+1} · ${s.duration}ث`;b.style.flexGrow=String(s.duration);b.onclick=()=>{if(playing)return;index=i;selectedElement=null;clock=sceneStart(i)+s.duration;stopSceneAudio();drawControls();render(1)};$('timeline').append(b)});for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).value=s[key];syncTypographyControls();for(const pair of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']])$(pair[1]).textContent=s[pair[0]]+'%';$('theme').value=state.theme;$('project').value=state.name;$('counter').textContent=`${index+1} / ${state.scenes.length}`;updateSeek();syncMathField(s.equation);refreshStickers();syncVisualPanel();syncSceneVoiceUI()}
+function drawControls(){const s=state.scenes[index];NM.freeEditor.refresh?.();syncExtraControls();$('scenes').replaceChildren();state.scenes.forEach((scene,i)=>{const el=document.createElement('button');el.type='button';el.className='scene'+(i===index?' active':'');const t=document.createElement('span');t.textContent=`${i+1}. ${scene.title||'مشهد جديد'}`;const d=document.createElement('small');d.textContent=`${scene.duration} ث`;el.append(t,d);el.onclick=()=>{if(playing)return;index=i;selectedElement=null;clock=sceneStart(i)+state.scenes[i].duration;stopSceneAudio();drawControls();render(1)};$('scenes').append(el)});$('timeline').replaceChildren();state.scenes.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className=i===index?'active':'';b.textContent=`${i+1} · ${s.duration}ث`;b.style.flexGrow=String(s.duration);b.onclick=()=>{if(playing)return;index=i;selectedElement=null;clock=sceneStart(i)+s.duration;stopSceneAudio();drawControls();render(1)};$('timeline').append(b)});for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).value=s[key];syncTypographyControls();for(const pair of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']])$(pair[1]).textContent=s[pair[0]]+'%';$('theme').value=state.theme;$('project').value=state.name;$('counter').textContent=`${index+1} / ${state.scenes.length}`;updateSeek();syncMathField(s.equation);refreshStickers();syncVisualPanel();syncSceneVoiceUI()}
 const TYPO_FIELDS=['titleSize','questionSize','equationScale','answerScale','titleY','questionY','equationY','answerY','titleX','questionX','equationX','answerX','titleBg','questionBg','answerBg','titleBgColor','questionBgColor','answerBgColor'];
 function syncTypographyControls(){
  const scene=state.scenes[index];
@@ -134,7 +134,7 @@ async function warmMath(raw,color=formulaColor()){
  finally{entry.pending=null;trimMathCache();renderCurrent();updateMathStatus();}})();
  return entry.pending;
 }
-function usedMathPairs(){return state.scenes.flatMap((s,i)=>[...NM.mathanim.variants(s,formulaColor(),state.captions.highlight),...(s.equationAnim==='fromPrevious'&&i>0?[[NM.mathanim.plain(state.scenes[i-1].equation),formulaColor()]]:[]),[s.answer,answerFormulaColor(s)]]).filter(([v])=>String(v||'').trim())}
+function usedMathPairs(){return state.scenes.flatMap((s,i)=>[...NM.freeEditor.mathPairs(s),...NM.mathanim.variants(s,formulaColor(),state.captions.highlight),...(s.equationAnim==='fromPrevious'&&i>0?[[NM.mathanim.plain(state.scenes[i-1].equation),formulaColor()]]:[]),[s.answer,answerFormulaColor(s)]]).filter(([v])=>String(v||'').trim())}
 function updateMathStatus(){
  const failed=usedMathPairs().find(([raw,color])=>mathCache.get(mathKey(raw,color))?.error);
  if(failed){const entry=mathCache.get(mathKey(...failed));$('mathWarning').hidden=false;$('mathWarning').textContent='تنبيه: توجد معادلة لم تُرسم بشكل صحيح: '+failed[0]+' — '+entry.error+'؛ صحح LaTeX قبل التصدير.';}
@@ -268,8 +268,8 @@ function render(p=1,options={guides:!exporting}){
  if(!isHook&&state.branding.showFooter&&state.branding.footer)text(ctx,state.branding.footer,540,1795,860,state.branding.footerSize,fg,400,/[\u0600-\u06ff]/.test(state.branding.footer)?'rtl':'ltr');
  NM.overlays.progress(ctx,state.overlays,absoluteTime,seconds());
  NM.captions.draw(ctx,state,subtitleTimeline,absoluteTime);
- drawStickers(ctx,scene,p);
- if(options.guides){selectionBox(ctx,scene);NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
+ drawStickers(ctx,scene,p);NM.freeEditor.draw(ctx,scene,p,{math:(raw,x,y,w,h,color)=>math(ctx,raw,x,y,w,h,color),font:(role,weight,size)=>NM.font(role,weight,size),text});
+ if(options.guides){selectionBox(ctx,scene);NM.freeEditor.guides(ctx,scene);NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
  ctx.restore();updateSeek();
 }
 
@@ -364,6 +364,7 @@ function visualHit(p){
 }
 $('stage').addEventListener('pointerdown',e=>{
  if(playing)return;
+ if(NM.freeEditor.pointerDown(e,{state,index,stage:$('stage'),playing,save,renderCurrent}))return;
  const p=stageCoords(e),px=p.x*CW,py=p.y*CH;
  const old=selectedElement&&elementBounds(selectedElement,state.scenes[index]);
  const resize=!!old&&Math.hypot(px-(old.cx+old.w/2),py-(old.cy+old.h/2))<65;
@@ -376,6 +377,7 @@ $('stage').addEventListener('pointerdown',e=>{
  $('stage').setPointerCapture(e.pointerId);refreshStickers();syncVisualPanel();renderCurrent();
 });
 $('stage').addEventListener('pointermove',e=>{
+ if(NM.freeEditor.pointerMove(e))return;
  if(!elementGesture||e.pointerId!==elementGesture.pointerId||playing)return;
  const p=stageCoords(e),g=elementGesture,scene=state.scenes[index];
  if(g.mode==='resize'){
@@ -392,7 +394,7 @@ $('stage').addEventListener('pointermove',e=>{
  }
  renderCurrent();
 });
-function dragEnd(e){if(!elementGesture||e.pointerId!==elementGesture.pointerId)return;elementGesture=null;save();syncTypographyControls();refreshStickers();syncVisualPanel();renderCurrent()}
+function dragEnd(e){if(NM.freeEditor.pointerEnd(e))return;if(!elementGesture||e.pointerId!==elementGesture.pointerId)return;elementGesture=null;save();syncTypographyControls();refreshStickers();syncVisualPanel();renderCurrent()}
 $('stage').addEventListener('pointerup',dragEnd);$('stage').addEventListener('pointercancel',dragEnd);
 $('visualSize').addEventListener('input',e=>visualResize(Number(e.target.value)));
 $('visualDelete').addEventListener('click',()=>$('removeSticker').click());
@@ -481,4 +483,5 @@ async function startPreviewMix(){const ac=new (window.AudioContext||window.webki
 function stopPreviewMix(){if(!previewMix)return;for(const source of previewMix.sources)try{source.stop()}catch(e){}previewMix.ac.close().catch(()=>{});previewMix=null}
 musicLoadPromise=loadMusic().catch(e=>status('تعذّر تحميل الموسيقى: '+e.message));
 
+NM.freeEditor.init({getState:()=>state,getIndex:()=>index,playing:()=>playing,commit:()=>{save();renderCurrent()},render:()=>renderCurrent(),apply:(next,i)=>{state=cleanProject(next);NM.project=state;index=Math.max(0,Math.min(state.scenes.length-1,i));clock=sceneStart(index)+state.scenes[index].duration;save();drawControls();render(1);prewarm()},prewarm:()=>{prewarm()},status});
 initialize();voiceLoadPromise=loadSceneVoices().catch(e=>{status('تعذر قراءة ملفات الصوت المحفوظة: '+e.message)});
