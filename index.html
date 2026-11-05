@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102a43"><meta name="description" content="Nibor Motion — محرر فيديوهات الرياضيات التعليمية"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><title>Nibor Motion</title><link rel="stylesheet" href="styles.css"><script>window.MathJax={loader:{load:['input/tex','output/svg','[tex]/color']},tex:{inlineMath:[['\\(','\\)']],packages:{'[+]':['ams','color']},macros:{mark:['\\color{#f4d96c}{#1}',1]}},svg:{fontCache:'none'},startup:{typeset:false}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script><script defer src="https://unpkg.com/mathlive@0.104.2/mathlive.min.js"></script><script src="version.js"></script><script defer src="fonts.js"></script><script defer src="captions.js"></script><script defer src="mathanim.js"></script><script defer src="audiomix.js"></script><script defer src="overlays.js"></script><script>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102a43"><meta name="description" content="Nibor Motion — محرر فيديوهات الرياضيات التعليمية"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><title>Nibor Motion</title><link rel="stylesheet" href="styles.css"><script>window.MathJax={loader:{load:['input/tex','output/svg','[tex]/color']},tex:{inlineMath:[['\\(','\\)']],packages:{'[+]':['ams','color']},macros:{mark:['\\color{#f4d96c}{#1}',1]}},svg:{fontCache:'none'},startup:{typeset:false}};</script><script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script><script defer src="https://unpkg.com/mathlive@0.104.2/mathlive.min.js"></script><script src="version.js"></script><script defer src="fonts.js"></script><script defer src="captions.js"></script><script defer src="mathanim.js"></script><script defer src="audiomix.js"></script><script defer src="overlays.js"></script><script defer src="mobile-ui.js"></script><script>
 window.addEventListener('DOMContentLoaded',()=>{
  document.title='Nibor Motion v'+APP_VERSION;
  document.getElementById('appVersion').textContent='v'+APP_VERSION;
@@ -9,6 +9,16 @@ window.addEventListener('DOMContentLoaded',()=>{
 });
 </script></head>
 <body>
+<nav class="mobile-bottom-nav" aria-label="أدوات الاستوديو">
+<button type="button" data-mobile-tab="scenes" aria-controls="mobileSheet" aria-expanded="false"><span aria-hidden="true">▦</span><small>المشاهد</small></button>
+<button type="button" data-mobile-tab="edit" aria-controls="mobileSheet" aria-expanded="false"><span aria-hidden="true">✎</span><small>تحرير</small></button>
+<button type="button" data-mobile-tab="audio" aria-controls="mobileSheet" aria-expanded="false"><span aria-hidden="true">♫</span><small>الصوت</small></button>
+<button type="button" data-mobile-tab="design" aria-controls="mobileSheet" aria-expanded="false"><span aria-hidden="true">◈</span><small>التصميم</small></button>
+<button type="button" data-mobile-tab="export" aria-controls="mobileSheet" aria-expanded="false"><span aria-hidden="true">⇩</span><small>التصدير</small></button>
+</nav>
+<div class="mobile-sheet-head" id="mobileSheet" role="region" aria-label="لوحة التحرير" hidden>
+<strong id="mobileSheetTitle">تحرير المشهد</strong><button type="button" id="mobileSheetClose" aria-label="إغلاق لوحة التحرير">✕ إغلاق</button>
+</div>
 <header class="header"><div><h1>Nibor Motion <small id="appVersion"></small></h1><p>استوديو الفيديوهات الرياضية المتحركة</p></div><span class="badge">معاينة وتصدير بمحرك واحد</span></header>
 <main class="layout">
 <section class="panel scenes-panel"><h2>المشاهد</h2><div id="scenes" aria-label="قائمة المشاهد"></div><div class="actions"><button id="add">+ مشهد جديد</button><button class="secondary" id="remove">حذف</button></div><label for="theme">قالب التصميم</label><select id="theme"><option value="notebook">دفتر مسطر</option><option value="blackboard">سبورة</option><option value="clean">أبيض</option><option value="dark">داكن</option></select><label for="project">اسم المشروع</label><input id="project" maxlength="120"><fieldset class="branding-settings"><legend>نص رأس الفيديو وذيله (جميع المشاهد)</legend>

@@ -41,3 +41,12 @@
 7. جرّب الإيقاف أثناء التصدير للتأكد من عدم إنشاء ملف ناقص.
 
 **قيود:** Safari قد يقلل دقة 1080×1920 أو يرفض ترميز MP4/خلط الصوت، حتى إن كانت أبعاد Canvas الأصلية 1080×1920. لا يمكن إثبات نتيجة التصدير النهائية دون تشغيل على جهازك. الترجمة تعتمد على توقيت محسوب تقديرياً لا على تحليل صوت/تمييز كلام فعلي. مناطق المنصات تقديرية وقابلة للتغير.
+
+
+## v0.8.0: Mobile-first workspace
+- A five-item bottom navigation is displayed on phones up to 760px CSS width: scenes, edit, audio, design, export.
+- The 9:16 Canvas preview stays in the primary page; editing opens a dismissible bottom-area overlay panel.
+- Existing editor controls and event handlers are preserved; `mobile-ui.js` only groups existing DOM nodes.
+- On tablets/desktops over 760px, the original 3-column editor remains.
+- No engine, JSON, audio, math or video export changes.
+- Test on Galaxy S25 Ultra (Chrome and Samsung Internet), particularly on-screen keyboard, S Pen dragging, modal scrolling and browser safe areas.
