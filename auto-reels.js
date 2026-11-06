@@ -29,7 +29,6 @@ function scenesFor(){
 }
 btn.addEventListener('click',()=>{const status=$('autoStatus');try{const project=scenesFor();const current=window.NM?.project;if(!current)throw Error('تعذر الوصول إلى المشروع الحالي');if(!confirm(`سيستبدل المولّد المشاهد الحالية بـ ${project.scenes.length} مشاهد. احفظ نسخة JSON من مشروعك أولاً. هل تريد المتابعة؟`))return;
  // Use the app's own import pipeline to validate and normalize all scenes.
- const blob=new File([JSON.stringify({...current,...project})],'auto-reels.json',{type:'application/json'});
- const file=$('file');const dt=new DataTransfer();dt.items.add(blob);file.files=dt.files;file.dispatchEvent(new Event('change',{bubbles:true}));status.textContent='تم تجهيز مشروع الريلز وإرساله إلى محرر المشاهد. راجع النتيجة والصوت.';
+ window.dispatchEvent(new CustomEvent('nibor:load-generated-project',{detail:{...current,...project}}));status.textContent='تم تجهيز مشروع الريلز وإرساله إلى محرر المشاهد. راجع النتيجة والصوت.';
  }catch(e){status.textContent='تعذر التوليد: '+e.message;}});
 })();

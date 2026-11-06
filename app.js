@@ -87,6 +87,14 @@ $('save').onclick=()=>{save();status('تم حفظ المشروع في هذا ا�
 function safeFileName(){return (state.name||'nibor-motion').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').replace(/[. ]+$/g,'').trim().slice(0,90)||'nibor-motion'}
 function download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000)}
 $('json').onclick=()=>download(new Blob([JSON.stringify({...state,version:APP_VERSION},null,2)],{type:'application/json'}),`${safeFileName()}-v${APP_VERSION}.json`);
+// Internal project import bridge avoids assigning input.files/DataTransfer (unreliable on iOS Safari).
+window.addEventListener('nibor:load-generated-project',event=>{
+ try{if(playing||exporting)throw Error('أوقف التشغيل أولاً');
+ const next=cleanProject(event.detail);stopSceneAudio();state=next;voiceBlobs.clear();
+ index=0;clock=state.scenes[0].duration;selectedStickerId=null;save();drawControls();syncBrandingControls();render(1);prewarm();
+ status('تم إنشاء المشاهد وعرضها. راجع صحة المعادلات قبل التصدير.');
+ }catch(error){status('تعذر تحميل المشاهد: '+error.message);}
+});
 $('import').onclick=()=>$('file').click();$('file').onchange=async e=>{try{if(!e.target.files[0])return;if(!confirm('استيراد ملف JSON سيستبدل المشروع الحالي. هل تريد المتابعة؟'))return;const x=JSON.parse(await e.target.files[0].text());stopSceneAudio();state=cleanProject(x);voiceBlobs.clear();voiceLoadPromise=loadSceneVoices().catch(e=>{status('تعذر تحميل الأصوات: '+e.message)});musicLoadPromise=loadMusic().catch(e=>status('تعذّر تحميل موسيقى المشروع: '+e.message));index=0;clock=state.scenes[0].duration;selectedStickerId=null;save();drawControls();syncBrandingControls();render(1);prewarm();status('تم استيراد المشروع. ملفات الصوت لا تتضمنها نسخة JSON؛ يلزم إعادة ربطها عند نقل المشروع.')}catch(err){status('فشل الاستيراد: '+err.message)}finally{e.target.value=''}};
 function initMathEditor(){const field=$('mathfield');if(!customElements.get('math-field')){$('mathHost').hidden=true;status('المحرر المرئي غير متاح حالياً؛ يمكنك استخدام إدخال LaTeX النصي.');return}mathfieldReady=true;try{field.mathVirtualKeyboardPolicy='auto';field.smartMode=true;field.value=state.scenes[index].equation;field.addEventListener('input',()=>{if(fieldSync||playing)return;fieldSync=true;const v=field.value;$('equation').value=v;fieldSync=false;redrawAfterEdit('equation',v)})}catch(e){console.warn(e)}}
 if(customElements.get('math-field'))initMathEditor();else Promise.race([customElements.whenDefined('math-field'),waitForMathEditorTimeout()]).then(()=>{if(customElements.get('math-field'))initMathEditor();else {$('mathHost').hidden=true;status('المحرر المرئي غير متاح؛ استخدم حقل LaTeX النصي.')}}).catch(()=>{});
@@ -288,8 +296,11 @@ function math(ctx,raw,cx,cy,maxW,maxH,color){
    ctx.save();ctx.drawImage(img,cx-w/2,cy-h/2,w,h);ctx.restore();return;
   }
  }
- ctx.save();ctx.fillStyle='rgba(191,67,48,0.1)';ctx.fillRect(cx-maxW*.48,cy-45,maxW*.96,90);
- text(ctx,entry?.error?'⚠ صياغة المعادلة تحتاج تصحيحاً':'جارٍ تجهيز المعادلة…',cx,cy,maxW*.9,27,'#af4430',550);ctx.restore();
+ // Offline-safe mathematical preview: never leave the canvas empty while MathJax loads.
+ const fallback=raw.replace(/\\(?:quad|qquad)/g,'  ').replace(/\\times/g,'×').replace(/\\cdot/g,'·').replace(/\\pm/g,'±').replace(/\\Delta/g,'Δ').replace(/\\sqrt\{([^{}]*)\}/g,'√($1)').replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g,'($1)/($2)').replace(/\\(?:left|right)/g,'').replace(/\\/g,'').replace(/[{}]/g,'');
+ ctx.save();ctx.fillStyle=color||'#173a5c';ctx.font='bold 64px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';
+ const size=Math.min(72,Math.max(25,Math.floor(maxW/Math.max(3,fallback.length)*1.7)));ctx.font=`bold ${size}px system-ui`;
+ ctx.fillText(fallback.slice(0,180),cx,cy,maxW);ctx.restore();
 }
 function drawTextBackdrop(c,shape,x,y,w,h,color){
  if(shape==='none')return;
@@ -343,6 +354,7 @@ function visualResize(value){if(!selectedElement||playing)return;const scene=sta
  else {const key=ELEMENT_KEYS[selectedElement][2];const limits=selectedElement==='title'?[30,100]:selectedElement==='question'?[30,90]:[60,150];scene[key]=bounded(value,...limits,scene[key]);syncTypographyControls();}
  save();syncVisualPanel();renderCurrent();}
 function render(p=1,options={guides:!exporting}){
+ try {
  const scene=state.scenes[index],w=CW,h=CH,theme=state.theme;
  const fg=theme==='dark'||theme==='blackboard'?'#f4f7ff':'#173a5c';
  ctx.save();ctx.setTransform(1,0,0,1,0,0);
@@ -371,6 +383,7 @@ function render(p=1,options={guides:!exporting}){
  NM.mathStudio.draw(ctx,scene,p,fg,(raw,x,y,w,h,color)=>math(ctx,raw,x,y,w,h,color));drawStickers(ctx,scene,p);NM.freeEditor.draw(ctx,scene,p,{math:(raw,x,y,w,h,color)=>math(ctx,raw,x,y,w,h,color),font:(role,weight,size)=>NM.font(role,weight,size),text});
  if(options.guides){selectionBox(ctx,scene);NM.freeEditor.guides(ctx,scene);NM.mathStudio.guides(ctx,scene);NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
  ctx.restore();updateSeek();NM.timelineEditor.position?.();
+ }catch(error){console.error('Preview render failure',error);try{ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#faf6ea';ctx.fillRect(0,0,CW,CH);ctx.fillStyle='#173a5c';ctx.textAlign='center';ctx.font='bold 58px system-ui';ctx.fillText(state.scenes[index]?.title||'معاينة المشهد',540,600,950);ctx.font='36px system-ui';ctx.fillText('تعذر رسم أحد العناصر — يمكنك متابعة التحرير',540,800,950);}catch(_){}status('خطأ في معاينة المشهد: '+error.message);}
 }
 
 const wait=ms=>new Promise(res=>setTimeout(res,ms));
