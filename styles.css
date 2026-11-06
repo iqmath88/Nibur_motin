@@ -135,3 +135,19 @@
 
 /* v0.12.1 mixed Arabic question + inline mathematical formula insertion */
 .question-math-tools{margin:10px 0 17px;padding:12px;border:1px solid #b5d5eb;background:#f1f8ff;border-radius:13px;direction:rtl}.question-math-tools summary{font-weight:750;cursor:pointer;min-height:40px}.question-math-tools math-field,.question-math-tools input{display:block;width:100%;box-sizing:border-box;margin:8px 0;min-height:52px;background:white;border-radius:9px;border:1px solid #bbccdb;padding:6px}.question-math-shortcuts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.question-math-shortcuts button{flex:1;min-width:56px}.question-math-tools #questionInsertMath{width:100%;min-height:48px;background:#1b598c;color:white}.question-math-tools .muted{line-height:1.6}
+
+/* v0.12.2: single mixed-script question editor, mobile touch targets. */
+.nm-question-composer-wrap{border:1px solid #9cc7e5;border-radius:14px;padding:9px;background:#f7fbff;margin:8px 0 11px}
+.nm-question-composer{min-height:126px;max-height:52vh;overflow-y:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#fff;border:2px solid #ccdae7;border-radius:11px;padding:14px 12px;font-size:20px;line-height:2;direction:rtl;text-align:right;outline:none;unicode-bidi:plaintext;-webkit-user-select:text;user-select:text;caret-color:#155a90}
+.nm-question-composer:focus{border-color:#4f9cdb;box-shadow:0 0 0 3px #72baf333}
+.nm-question-composer:empty:before{content:attr(data-placeholder);color:#8696a7;pointer-events:none}
+.nm-inline-equation{display:inline-flex;align-items:center;vertical-align:middle;direction:ltr;unicode-bidi:isolate;max-width:100%;border:1px solid #7cb6e1;background:#eaf5ff;color:#123957;border-radius:9px;padding:1px 7px;margin:0 3px;cursor:pointer;touch-action:manipulation;white-space:nowrap;gap:5px;min-height:35px}
+.nm-inline-equation:focus,.nm-inline-equation.nm-math-editing{outline:2px solid #2c8bd2;outline-offset:2px}
+.nm-inline-math-render svg{max-height:1.75em;max-width:100%;width:auto;display:inline-block;vertical-align:middle}
+.nm-inline-math-pen{font-size:14px;opacity:.75}
+.nm-question-composer-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.nm-question-composer-actions button{flex:1 1 160px;min-height:46px}
+.nm-question-advanced{font-size:13px;color:#536e87;margin-bottom:12px}
+.nm-question-advanced summary{padding:8px;cursor:pointer}
+.nm-question-advanced textarea{font:15px/1.5 monospace!important;direction:auto!important;min-height:70px}
+@media(max-width:760px){.nm-question-composer{font-size:19px;min-height:135px}.nm-question-composer-actions{position:relative}.question-math-tools{scroll-margin-top:30px}}
