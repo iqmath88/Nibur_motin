@@ -1,4 +1,4 @@
-/* Nibor Motion 0.12.2 — visual mixed Arabic / mathematical question editor.
+/* Nibor Motion 0.13.0 — visual mixed Arabic / mathematical question editor.
    DOM is constructed with textContent/createElement (no HTML injection).
    The persisted scene.question remains the existing \(LaTeX\) text format. */
 (()=>{
@@ -9,6 +9,27 @@
  if(!editor||!source)return;
  const TOKEN='nm-inline-equation';
  let savedRange=null,editing=null,loading=false,pending=0;
+ const history=[];let historyIndex=-1;
+ function recordHistory(){
+  if(loading)return;
+  const value=serialize();
+  if(history[historyIndex]===value)return;
+  history.splice(historyIndex+1);
+  history.push(value);
+  if(history.length>80)history.shift();
+  historyIndex=history.length-1;updateHistoryButtons();
+ }
+ function updateHistoryButtons(){
+  const undo=$('nmQuestionUndo'),redo=$('nmQuestionRedo');
+  if(undo)undo.disabled=historyIndex<=0;
+  if(redo)redo.disabled=historyIndex>=history.length-1;
+ }
+ function stepHistory(delta){
+  const to=historyIndex+delta;
+  if(to<0||to>=history.length)return;
+  historyIndex=to;load(history[to],false);persist();updateHistoryButtons();editor.focus();
+ }
+
  function pieces(raw){
   const list=[],text=String(raw||''),r=/\\\(([\s\S]*?)\\\)|\$([^$\n]+)\$/g;
   let m,last=0;
@@ -31,13 +52,14 @@
    const svg=result.querySelector('svg');if(svg){const copy=svg.cloneNode(true);copy.setAttribute('focusable','false');copy.setAttribute('aria-hidden','true');target.replaceChildren(copy)}
   }catch(e){target.title='تعذر عرض المعادلة: '+e.message}
  }
- function load(raw){
+ function load(raw,resetHistory=true){
   loading=true;editor.replaceChildren();
   for(const p of pieces(raw)){
    if(p.kind==='math')editor.append(token(p.value));
    else{const lines=p.value.split('\n');lines.forEach((line,i)=>{if(i)editor.append(document.createElement('br'));if(line)editor.append(document.createTextNode(line))})}
   }
   loading=false;savedRange=null;editing=null;
+  if(resetHistory){history.length=0;history.push(serialize());historyIndex=0;updateHistoryButtons()}
  }
  // Convert contenteditable's user-created lines into plain text while retaining math spans.
  function serialize(){
@@ -59,6 +81,7 @@
   if(loading)return;
   const value=serialize();if(source.value===value)return;
   source.value=value;source.dispatchEvent(new Event('input',{bubbles:true}));
+  recordHistory();
  }
  function rangeWithinEditor(range){return range&&editor.contains(range.commonAncestorContainer)}
  document.addEventListener('selectionchange',()=>{
@@ -88,7 +111,16 @@
  }
  editor.addEventListener('click',e=>{const el=e.target.closest?.('.'+TOKEN);if(el)editToken(el)});
  editor.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&isMath(e.target)){e.preventDefault();editToken(e.target)}});
- editor.addEventListener('input',persist);
+ editor.addEventListener('input',()=>{persist();recordHistory()});
+ editor.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='z'){
+   e.preventDefault();stepHistory(e.shiftKey?1:-1);
+  }else if((e.ctrlKey||e.metaKey)&&!e.altKey&&e.key.toLowerCase()==='y'){
+   e.preventDefault();stepHistory(1);
+  }
+ });
+ $('nmQuestionUndo')?.addEventListener('click',()=>stepHistory(-1));
+ $('nmQuestionRedo')?.addEventListener('click',()=>stepHistory(1));
  editor.addEventListener('paste',e=>{
   e.preventDefault();const txt=e.clipboardData?.getData('text/plain')||'';
   // Preserve plain text only; avoid pasted rich HTML in contenteditable.
@@ -102,8 +134,43 @@
   if(document.activeElement===editor||editor.contains(document.activeElement))return;
   if(source.value!==serialize())load(source.value);
  });
- $('nmQuestionAddMath').addEventListener('click',()=>{editing=null;details.open=true;const field=$('questionMathfield');(field&&!field.hidden?field:$('questionMathCode')).focus()});
+ $('nmQuestionAddMath').addEventListener('click',()=>{editing?.classList.remove('nm-math-editing');editing=null;details.open=true;const field=$('questionMathfield');(field&&!field.hidden?field:$('questionMathCode')).focus()});
  $('nmQuestionComposerHelp').addEventListener('click',()=>{const box=$('nmQuestionComposerHelpText');box.hidden=!box.hidden});
- N.questionEditor={load,insertEquation,pieces,serialize};
+ // Mobile-first mathematical palette. Buttons are created as text nodes, never HTML strings.
+ const palettes={
+  'أساسيات':[
+   ['كسر','\\frac{1}{2}'],['جذر','\\sqrt{x}'],['أس','x^{2}'],['دليل','x_{1}'],['قوس','\\left(x+1\\right)'],['مساواة','x=1'],['لا يساوي','\\ne'],['تقريباً','\\approx'],['π','\\pi'],['∞','\\infty']
+  ],
+  'الجبر':[
+   ['تربيعية','ax^{2}+bx+c=0'],['قانون عام','x=\\frac{-b\\pm\\sqrt{b^{2}-4ac}}{2a}'],['لوغاريتم','\\log_{2}(x)'],['لوغاريتم طبيعي','\\ln(x)'],['قيمة مطلقة','\\left|x\\right|'],['متباينة','x\\leq 3'],['مجموع','\\sum_{i=1}^{n}i'],['مصفوفة','\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}']
+  ],
+  'هندسة':[
+   ['نقطة','A(2,3)'],['مركز دائرة','C(a,b)'],['معادلة دائرة','(x-a)^2+(y-b)^2=r^2'],['درجة','45^{\\circ}'],['زاوية','\\angle ABC'],['مثلث','\\triangle ABC'],['توازي','\\parallel'],['عمودي','\\perp'],['مسافة','AB=\\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}']
+  ],
+  'تفاضل وتكامل':[
+   ['مشتقة','f\\prime(x)'],['dy/dx','\\frac{dy}{dx}'],['نهاية','\\lim_{x\\to a}f(x)'],['تكامل','\\int f(x)\\,dx'],['تكامل محدد','\\int_{a}^{b}f(x)\\,dx'],['جيب','\\sin(x)'],['جيب تمام','\\cos(x)'],['ظل','\\tan(x)']
+  ]
+ };
+ const palette=$('nmQuestionPalette'),tabs=$('nmQuestionPaletteTabs'),keys=$('nmQuestionPaletteKeys');
+ function buildKeys(category){
+  keys.replaceChildren();
+  for(const [label,latex] of palettes[category]){
+   const button=document.createElement('button');button.type='button';button.className='nm-question-key';button.textContent=label;button.title=latex;
+   button.setAttribute('aria-label','إدراج '+label);
+   button.addEventListener('pointerdown',e=>e.preventDefault());
+   button.addEventListener('click',()=>{if(!insertEquation(latex))return;editor.focus()});
+   keys.append(button);
+  }
+  for(const button of tabs.children)button.setAttribute('aria-selected',String(button.dataset.category===category));
+ }
+ if(palette&&tabs&&keys){
+  for(const category of Object.keys(palettes)){
+   const button=document.createElement('button');button.type='button';button.textContent=category;button.dataset.category=category;button.setAttribute('role','tab');button.className='nm-question-tab';
+   button.addEventListener('pointerdown',e=>e.preventDefault());
+   button.addEventListener('click',()=>buildKeys(category));tabs.append(button);
+  }
+  buildKeys('أساسيات');
+ }
+ N.questionEditor={load,insertEquation,pieces,serialize,stepHistory,palettes};
  load(source.value);
 })();

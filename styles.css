@@ -151,3 +151,18 @@
 .nm-question-advanced summary{padding:8px;cursor:pointer}
 .nm-question-advanced textarea{font:15px/1.5 monospace!important;direction:auto!important;min-height:70px}
 @media(max-width:760px){.nm-question-composer{font-size:19px;min-height:135px}.nm-question-composer-actions{position:relative}.question-math-tools{scroll-margin-top:30px}}
+
+/* v0.13.0: compact mobile math keypad integrated into the Arabic question editor */
+.nm-question-palette{background:#eef5fb;border:1px solid #c4d9e9;border-radius:13px;margin-top:10px;padding:10px;direction:rtl}
+.nm-question-palette-title{display:flex;align-items:center;flex-wrap:wrap;gap:5px 10px;font-size:14px;color:#173a58;margin-bottom:7px}
+.nm-question-palette-title span{font-size:12px;color:#516d82}
+.nm-question-palette-tabs{display:flex;gap:5px;overflow-x:auto;scroll-snap-type:x proximity;padding:2px 0 7px;scrollbar-width:thin}
+.nm-question-tab{flex:0 0 auto;min-height:40px;padding:8px 12px!important;border-radius:11px!important;background:#fff!important;color:#193c5d!important;border:1px solid #c1d4e3!important;scroll-snap-align:start}
+.nm-question-tab[aria-selected="true"]{background:#193c5d!important;color:#fff!important}
+.nm-question-palette-keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:6px}
+.nm-question-key{min-height:46px;max-width:100%;padding:7px 4px!important;background:#fff!important;color:#173c5c!important;border:1px solid #bed1df!important;border-radius:10px!important;font-weight:700;overflow-wrap:anywhere;touch-action:manipulation}
+.nm-question-key:active{background:#d4eafc!important}
+.nm-question-history{display:flex;justify-content:flex-end;gap:7px;margin-top:9px}
+.nm-question-history button{min-height:42px;min-width:90px}
+.nm-question-history button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:760px){.nm-question-palette{padding:7px;margin-top:8px}.nm-question-palette-keys{grid-template-columns:repeat(4,minmax(0,1fr))}.nm-question-key{font-size:13px;min-height:46px}.nm-question-composer{min-height:116px}}
