@@ -70,7 +70,7 @@ for(const key of TYPO_FIELDS){const el=$(key);if(el)el.addEventListener(el.tagNa
 $('resetTypography').onclick=()=>{if(playing)return;const scene=state.scenes[index];const d=cleanScene({});for(const key of TYPO_FIELDS)scene[key]=d[key];save();syncTypographyControls();scheduleMathWarm();renderCurrent();status('تمت استعادة تنسيق النصوص الافتراضي لهذا المشهد')};
 function updateSeek(){const total=seconds();$('seek').value=Math.round(1000*clock/Math.max(.01,total));$('time').textContent=`${fmt(clock)} / ${fmt(total)}`}
 function syncMathField(value){const field=$('mathfield');if(!mathfieldReady||!field)return;fieldSync=true;try{field.value=value||''}catch(e){console.warn(e)}fieldSync=false}
-function redrawAfterEdit(key,val){const s=state.scenes[index];s[key]=(['duration'].includes(key)?bounded(val,1,MAX_SCENE_DURATION,4):['qAt','eAt','aAt'].includes(key)?bounded(val,0,95,20):String(val));save();if(key==='duration'){clock=sceneStart(index)+s.duration;drawControls()}else{if(key==='title'){const label=$('scenes').children[index]?.firstChild;if(label)label.textContent=`${index+1}. ${s.title||'مشهد جديد'}`;}if(key==='equation'&&$('mathfield')?.value!==s.equation)syncMathField(s.equation);if(['qAt','eAt','aAt'].includes(key))$({qAt:'qOut',eAt:'eOut',aAt:'aOut'}[key]).textContent=s[key]+'%';render(1)}if(key==='equation'||key==='answer')scheduleMathWarm();if(key==='speechText')rebuildTimeline();}
+function redrawAfterEdit(key,val){const s=state.scenes[index];s[key]=(['duration'].includes(key)?bounded(val,1,MAX_SCENE_DURATION,4):['qAt','eAt','aAt'].includes(key)?bounded(val,0,95,20):String(val));save();if(key==='duration'){clock=sceneStart(index)+s.duration;drawControls()}else{if(key==='title'){const label=$('scenes').children[index]?.firstChild;if(label)label.textContent=`${index+1}. ${s.title||'مشهد جديد'}`;}if(key==='equation'&&$('mathfield')?.value!==s.equation)syncMathField(s.equation);if(['qAt','eAt','aAt'].includes(key))$({qAt:'qOut',eAt:'eOut',aAt:'aOut'}[key]).textContent=s[key]+'%';render(1)}if(key==='equation'||key==='answer'||key==='question')scheduleMathWarm();if(key==='speechText')rebuildTimeline();}
 for(const key of ['title','question','equation','answer','duration','qAt','eAt','aAt'])$(key).addEventListener('input',e=>{if(playing)return;redrawAfterEdit(key,e.target.value)});
 function syncBrandingControls(){const b=state.branding;$('videoHeader').value=b.header;$('videoFooter').value=b.footer;$('showHeader').checked=b.showHeader;$('showFooter').checked=b.showFooter;$('headerSize').value=b.headerSize;$('footerSize').value=b.footerSize;$('headerSizeOut').textContent=b.headerSize+'px';$('footerSizeOut').textContent=b.footerSize+'px'}
 for(const [id,key] of [['videoHeader','header'],['videoFooter','footer']])$(id).addEventListener('input',e=>{if(playing)return;state.branding[key]=brandingText(e.target.value,'');save();renderCurrent()});
@@ -92,6 +92,27 @@ function initMathEditor(){const field=$('mathfield');if(!customElements.get('mat
 if(customElements.get('math-field'))initMathEditor();else Promise.race([customElements.whenDefined('math-field'),waitForMathEditorTimeout()]).then(()=>{if(customElements.get('math-field'))initMathEditor();else {$('mathHost').hidden=true;status('المحرر المرئي غير متاح؛ استخدم حقل LaTeX النصي.')}}).catch(()=>{});
 function waitForMathEditorTimeout(){return new Promise(resolve=>setTimeout(resolve,7000))}
 document.querySelectorAll('[data-math]').forEach(btn=>btn.addEventListener('click',()=>{if(playing)return;const field=$('mathfield');if(mathfieldReady){field.executeCommand(['insert',btn.dataset.math,{selectionMode:'placeholder'}]);field.focus()}else{const el=$('equation');el.setRangeText(btn.dataset.math.replaceAll('#0','x').replaceAll('#?','y'),el.selectionStart,el.selectionEnd,'end');el.dispatchEvent(new Event('input'));el.focus()}}));
+// Inline math insertion: MathLive virtual keyboard when present; LaTeX fallback otherwise.
+(function initQuestionMath(){
+ const field=$('questionMathfield'),source=$('questionMathCode'),question=$('question');
+ const activateMathField=()=>{field.hidden=false;field.mathVirtualKeyboardPolicy='auto';field.smartMode=true;field.addEventListener('input',()=>source.value=field.value);source.addEventListener('input',()=>{if(field.value!==source.value)field.value=source.value})};
+ if(customElements.get('math-field'))activateMathField();
+ else{field.hidden=true;customElements.whenDefined('math-field').then(activateMathField).catch(()=>{});}
+ $('questionInsertMath').addEventListener('click',()=>{
+  if(playing)return;
+  const latex=(customElements.get('math-field')?field.value:source.value).trim();
+  if(!latex){status('اكتب المعادلة أولاً ثم اضغط إدراج في السؤال.');return}
+  const from=question.selectionStart??question.value.length,to=question.selectionEnd??from;
+  const value='\\('+latex+'\\)';
+  question.setRangeText(value,from,to,'end');question.dispatchEvent(new Event('input',{bubbles:true}));
+  question.focus();status('أُدرجت المعادلة داخل السؤال. ستظهر منسقة في المعاينة والتصدير.');
+ });
+ document.querySelectorAll('[data-question-math]').forEach(button=>button.addEventListener('click',()=>{
+  const value=button.dataset.questionMath;
+  if(customElements.get('math-field')){field.executeCommand(['insert',value]);source.value=field.value;field.focus()}
+  else{source.setRangeText(value,source.selectionStart,source.selectionEnd,'end');source.focus()}
+ }));
+})();
 // Mathematical formulas are converted to standalone SVG bitmaps and used by the exact same Canvas compositor for preview and video.
 function likelyMath(s){return /\\[a-zA-Z]+|\^|_|[{}]/.test(s)||/[=+×÷]/.test(s)}
 function mathSVG(latex,color){
@@ -134,7 +155,22 @@ async function warmMath(raw,color=formulaColor()){
  finally{entry.pending=null;trimMathCache();renderCurrent();updateMathStatus();}})();
  return entry.pending;
 }
-function usedMathPairs(){return state.scenes.flatMap((s,i)=>[...NM.mathStudio.mathPairs(s,formulaColor()),...NM.freeEditor.mathPairs(s),...NM.mathanim.variants(s,formulaColor(),state.captions.highlight),...(s.equationAnim==='fromPrevious'&&i>0?[[NM.mathanim.plain(state.scenes[i-1].equation),formulaColor()]]:[]),[s.answer,answerFormulaColor(s)]]).filter(([v])=>String(v||'').trim())}
+// Mixed Arabic + inline LaTeX in the question. Delimiters: \( ... \) or $ ... $.
+function questionParts(value){
+ const raw=String(value||'');const result=[];
+ const rex=/\\\(([\s\S]*?)\\\)|\$([^$\n]+)\$/g;let pos=0,m;
+ while((m=rex.exec(raw))!==null){
+  if(m.index>pos)result.push({type:'text',value:raw.slice(pos,m.index)});
+  result.push({type:'math',value:(m[1]??m[2]).trim()});pos=rex.lastIndex;
+ }
+ if(pos<raw.length)result.push({type:'text',value:raw.slice(pos)});
+ return result;
+}
+function inlineQuestionPairs(scene){
+ const color=backdropTextColor(scene.questionBg,scene.questionBgColor,formulaColor());
+ return questionParts(scene.question).filter(p=>p.type==='math'&&p.value).map(p=>[p.value,color]);
+}
+function usedMathPairs(){return state.scenes.flatMap((s,i)=>[...inlineQuestionPairs(s),...NM.mathStudio.mathPairs(s,formulaColor()),...NM.freeEditor.mathPairs(s),...NM.mathanim.variants(s,formulaColor(),state.captions.highlight),...(s.equationAnim==='fromPrevious'&&i>0?[[NM.mathanim.plain(state.scenes[i-1].equation),formulaColor()]]:[]),[s.answer,answerFormulaColor(s)]]).filter(([v])=>String(v||'').trim())}
 function updateMathStatus(){
  const failed=usedMathPairs().find(([raw,color])=>mathCache.get(mathKey(raw,color))?.error);
  if(failed){const entry=mathCache.get(mathKey(...failed));$('mathWarning').hidden=false;$('mathWarning').textContent='تنبيه: توجد معادلة لم تُرسم بشكل صحيح: '+failed[0]+' — '+entry.error+'؛ صحح LaTeX قبل التصدير.';}
@@ -176,6 +212,71 @@ function text(ctx,str,x,y,maxWidth,size,color,weight=650,dir='rtl',maxLines=2,mi
  ctx.restore();return layout;
 }
 
+// Shared Canvas renderer for the question: inline SVG equations and natural Arabic text.
+// It is used for preview, PNG and video; no DOM overlay can be lost during export.
+function mixedQuestionLayout(c,raw,maxW,size,color,draw=false,cx=0,cy=0){
+ const tokens=[];
+ for(const piece of questionParts(raw)){
+  if(piece.type==='math'){
+   const entry=mathCache.get(mathKey(piece.value,color));
+   const ratio=entry?.ready&&entry.img?entry.img.naturalWidth/entry.img.naturalHeight:2.1;
+   const mh=size*1.2,mw=Math.min(maxW*.78,mh*ratio);
+   tokens.push({type:'math',entry,value:piece.value,w:mw,h:mh});
+  }else{
+   const chunks=piece.value.split(/(\n|\s+)/);
+   c.save();c.font=NM.font('body',600,size);
+   for(const chunk of chunks){
+    if(!chunk)continue;
+    if(chunk==='\n')tokens.push({type:'break'});
+    else if(/^\s+$/.test(chunk))tokens.push({type:'space',w:c.measureText(' ').width,h:size});
+    else tokens.push({type:'text',value:chunk,w:c.measureText(chunk).width,h:size});
+   }
+   c.restore();
+  }
+ }
+ const rows=[{parts:[],w:0,h:size*1.3}];
+ for(const token of tokens){
+  let line=rows[rows.length-1];
+  if(token.type==='break'){rows.push({parts:[],w:0,h:size*1.3});continue}
+  if(token.type==='space'&&!line.parts.length)continue;
+  if(line.parts.length && line.w+token.w>maxW && token.type!=='space'){
+   rows.push({parts:[],w:0,h:size*1.3});line=rows[rows.length-1];
+  }
+  if(token.type==='space'&&!line.parts.length)continue;
+  line.parts.push(token);line.w+=token.w;line.h=Math.max(line.h,token.h*1.35);
+ }
+ const visible=rows.slice(0,4);const height=visible.reduce((n,line)=>n+line.h,0);
+ if(draw){
+  c.save();c.fillStyle=color;c.font=NM.font('body',600,size);c.textBaseline='middle';c.direction='rtl';c.textAlign='right';
+  let top=cy-height/2;
+  for(const line of visible){
+   let cursor=cx+line.w/2;const center=top+line.h/2;
+   for(const token of line.parts){
+    if(token.type==='math'){
+     if(token.entry?.ready&&token.entry.img)c.drawImage(token.entry.img,cursor-token.w,center-token.h/2,token.w,token.h);
+     else {c.save();c.strokeStyle='#af4430';c.strokeRect(cursor-token.w,center-token.h/2,token.w,token.h);c.fillText('⚠',cursor-3,center);c.restore()}
+    }else if(token.type==='text')c.fillText(token.value,cursor,center);
+    cursor-=token.w;
+   }
+   top+=line.h;
+  }
+  c.restore();
+ }
+ return {height,rows:visible.length};
+}
+function drawMixedQuestion(c,scene,x,y,maxWidth,color){
+ const content=String(scene.question||'');
+ const containsMath=questionParts(content).some(p=>p.type==='math');
+ if(!containsMath){
+  const layout=measureTextBlock(c,content,maxWidth,scene.questionSize,600,4,30,420);
+  drawTextBackdrop(c,scene.questionBg,x,y,900,Math.max(110,layout.height+42),scene.questionBgColor);
+  text(c,content,x,y,maxWidth,scene.questionSize,color,600,'rtl',4,30,420);return;
+ }
+ let size=scene.questionSize,layout=mixedQuestionLayout(c,content,maxWidth,size,color);
+ while((layout.height>420||layout.rows>4)&&size>30){size-=2;layout=mixedQuestionLayout(c,content,maxWidth,size,color)}
+ drawTextBackdrop(c,scene.questionBg,x,y,900,Math.max(110,layout.height+42),scene.questionBgColor);
+ mixedQuestionLayout(c,content,maxWidth,size,color,true,x,y);
+}
 function math(ctx,raw,cx,cy,maxW,maxH,color){
  raw=String(raw||'').trim();if(!raw)return;
  const entry=mathCache.get(mathKey(raw,color));
@@ -256,9 +357,7 @@ function render(p=1,options={guides:!exporting}){
   text(ctx,scene.title,CW*scene.titleX/100,titleY,820,scene.titleSize,backdropTextColor(scene.titleBg,scene.titleBgColor,fg),800,'rtl',2,30,150);
  });
  if(!isHook)fade(ctx,p,scene.qAt/100,()=>{
-  const questionLayout=measureTextBlock(ctx,scene.question,830,scene.questionSize,600,4,30,420);
-  drawTextBackdrop(ctx,scene.questionBg,CW*scene.questionX/100,questionY,900,Math.max(110,questionLayout.height+42),scene.questionBgColor);
-  text(ctx,scene.question,CW*scene.questionX/100,questionY,830,scene.questionSize,backdropTextColor(scene.questionBg,scene.questionBgColor,fg),600,'rtl',4,30,420);
+  drawMixedQuestion(ctx,scene,CW*scene.questionX/100,questionY,830,backdropTextColor(scene.questionBg,scene.questionBgColor,fg));
  });
  if(!isHook)NM.mathanim.draw(ctx,scene,p,index>0?state.scenes[index-1]:null,(tex,color)=>math(ctx,tex,CW*scene.equationX/100,equationY,865*scene.equationScale/100,175*scene.equationScale/100,color),fg,state.captions.highlight);
  if(!isHook&&scene.answer)fade(ctx,p,scene.aAt/100,()=>{

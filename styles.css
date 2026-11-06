@@ -132,3 +132,6 @@
 .nm-geometry-edit{border:1px solid #c5d9eb;border-radius:12px;padding:10px;background:#f2f8ff;margin:10px 0}
 .nm-geometry-edit .inline-setting{display:flex!important;align-items:center;gap:9px;min-height:44px}.nm-geometry-edit input[type=checkbox]{flex:0 0 22px;width:22px;height:22px}
 .nm-geometry-edit #nmGeoAngles{font-weight:700;color:#164b7c;direction:ltr;text-align:center;min-height:22px}
+
+/* v0.12.1 mixed Arabic question + inline mathematical formula insertion */
+.question-math-tools{margin:10px 0 17px;padding:12px;border:1px solid #b5d5eb;background:#f1f8ff;border-radius:13px;direction:rtl}.question-math-tools summary{font-weight:750;cursor:pointer;min-height:40px}.question-math-tools math-field,.question-math-tools input{display:block;width:100%;box-sizing:border-box;margin:8px 0;min-height:52px;background:white;border-radius:9px;border:1px solid #bbccdb;padding:6px}.question-math-shortcuts{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.question-math-shortcuts button{flex:1;min-width:56px}.question-math-tools #questionInsertMath{width:100%;min-height:48px;background:#1b598c;color:white}.question-math-tools .muted{line-height:1.6}
