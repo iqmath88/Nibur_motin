@@ -396,6 +396,7 @@ async function exportVideo(){
  const token=++playToken;
  const canvas=$('stage'),chunks=[],sources=[];
  let rec=null,ac=null,stream=null,videoStream=null,complete=null,cancelled=false,failed=false,recordingStarted=false,preparedAudio=null,audioDestination=null;
+ let exportStats={frames:0,lateFrames:0,maxGapMs:0,backgrounded:false};
  try{
   if(window.AudioContext||window.webkitAudioContext){ac=new (window.AudioContext||window.webkitAudioContext)();ac.resume().catch(()=>{});}
   await voiceLoadPromise;await NM.fonts.ready(status);await musicLoadPromise;
@@ -426,9 +427,20 @@ async function exportVideo(){
   complete=new Promise((resolve,reject)=>{rec.onstop=resolve;rec.onerror=e=>reject(e.error||Error('خطأ في تسجيل الفيديو'))});
   index=0;clock=0;rec.start(1000);recordingStarted=true;render(0);
   const startTime=performance.now();
+  let lastFrameTime=startTime;
+  const onVisibility=()=>{if(document.hidden)exportStats.backgrounded=true};
+  document.addEventListener('visibilitychange',onVisibility);
   if(preparedAudio){const m=NM.audiomix.startPrepared(ac,audioDestination,state,preparedAudio,ac.currentTime+.07);for(const src of m.sources)sources.push({src});}
   const total=seconds();status('جارٍ تصدير الفيديو مع صوت كل مشهد حسب توقيته…');
-  while(token===playToken&&(performance.now()-startTime)/1000<total){clock=Math.min(total,(performance.now()-startTime)/1000);const at=atTime(Math.min(clock,total-.001));if(index!==at.index){index=at.index;drawControls()}render(at.progress);await wait(30)}
+  try{while(token===playToken&&(performance.now()-startTime)/1000<total){
+   const now=performance.now(),gap=now-lastFrameTime;lastFrameTime=now;
+   exportStats.frames++;exportStats.maxGapMs=Math.max(exportStats.maxGapMs,gap);if(gap>100)exportStats.lateFrames++;
+   clock=Math.min(total,(now-startTime)/1000);const at=atTime(Math.min(clock,total-.001));
+   if(index!==at.index)index=at.index; // Avoid rebuilding controls while recording
+   render(at.progress,{guides:false});
+   if(exportStats.frames%30===0)status(`تصدير الفيديو: ${Math.min(100,Math.floor(clock/total*100))}% — ${exportStats.lateFrames} تأخرات في الإطارات`);
+   await wait(30);
+  }}finally{document.removeEventListener('visibilitychange',onVisibility)}
   if(token!==playToken){cancelled=true;return}
   clock=total;index=state.scenes.length-1;drawControls();render(1);await wait(170);
   if(token!==playToken){cancelled=true;return}
@@ -437,7 +449,8 @@ async function exportVideo(){
   if(!chunks.length)throw Error('لم ينتج المتصفح ملف فيديو صالحاً');
   const ext=mime.startsWith('video/mp4')?'mp4':'webm';
   download(new Blob(chunks,{type:mime}),`${safeFileName()}-v${APP_VERSION}.${ext}`);
-  status(`تم إنشاء ${ext.toUpperCase()} مع ${voiceEntries.length} تعليق صوتي. تحقق من الدقة الفعلية وتزامن الصوت على iPad.`);
+  const warnings=[];if(exportStats.backgrounded)warnings.push('انتقل التطبيق إلى الخلفية أثناء التصدير');if(exportStats.lateFrames>5)warnings.push(`${exportStats.lateFrames} فجوات زمنية أطول من 100ms`);
+  status(`تم إنشاء ${ext.toUpperCase()} مع ${voiceEntries.length} تعليق صوتي. ${warnings.length?'تنبيه: '+warnings.join('، '):'لم تُرصد فجوات توقيت كبيرة.'} افحص الفيديو النهائي قبل النشر.`);
  }catch(err){failed=true;if(token!==playToken){cancelled=true}else status('تعذر التصدير: '+err.message)}
  finally{
   cancelled=cancelled||token!==playToken;
@@ -446,7 +459,7 @@ async function exportVideo(){
   sources.forEach(a=>{try{a.src.stop()}catch(e){}});
   stream?.getTracks().forEach(t=>t.stop());videoStream?.getTracks().forEach(t=>t.stop());
   if(ac)await ac.close().catch(()=>{});
-  exporting=false;setBusy(false);
+  exporting=false;setBusy(false);drawControls();renderCurrent();
   if(cancelled)status('تم إلغاء التصدير');
  }
 }
