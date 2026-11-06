@@ -69,6 +69,13 @@ window.addEventListener('DOMContentLoaded',()=>{
 <label>بداية الظهور % <input id="nmGeoStart" type="number" min="0" max="99" value="0"></label>
 <label>نهاية الظهور % <input id="nmGeoEnd" type="number" min="1" max="100" value="100"></label>
 </div>
+<div class="nm-geometry-edit">
+<label class="inline-setting"><input type="checkbox" id="nmGeoMeasure"> عرض قياسات زوايا المثلث في الفيديو</label>
+<label class="inline-setting" id="nmGeoVertexMode"><input type="checkbox" id="nmGeoVertexEdit"> تحرير رؤوس المثلث باللمس (مع تفعيل التحريك)</label>
+<p id="nmGeoAngles" class="muted" role="status">اختر مثلثاً لعرض قياس الزوايا</p>
+<button type="button" id="nmGeoResetVertices" class="secondary">استعادة المثلث الافتراضي</button>
+<p class="muted">تُحسب الزوايا تلقائياً من مواقع الرؤوس. المس الرأس واسحبه بعد تفعيل «تحريك الشكل باللمس». لا يُعرض تحديد الرؤوس في التصدير.</p>
+</div>
 <div class="nm-free-actions"><button type="button" id="nmGeoMove">تحريك الشكل باللمس</button><button type="button" class="secondary" id="nmGeoDelete">حذف الشكل</button></div>
 <hr><strong>قلم التأشير على الفيديو</strong><div class="nm-free-actions"><button id="nmPenToggle" type="button">تفعيل القلم</button><button id="nmPenUndo" class="secondary" type="button">تراجع عن آخر خط</button><button id="nmPenClear" class="secondary" type="button">مسح التأشير</button></div><div class="nm-math-grid"><label>لون القلم <select id="nmPenColor"><option value="#e5484d">أحمر</option><option value="#226bb2">أزرق</option><option value="#1c9463">أخضر</option><option value="#173a5c">كحلي</option><option value="#ffffff">أبيض</option><option value="#f4d96c">أصفر</option></select></label><label>سماكة القلم <input type="range" id="nmPenSize" min="2" max="24" value="7"></label></div><p class="muted">تُحفظ خطوط القلم داخل المشهد وتظهر في التصدير. أوقف القلم قبل سحب العناصر الأخرى.</p>
 </details><details class="nm-settings"><summary>حركة المعادلة</summary>

@@ -25,7 +25,21 @@ window.NM=window.NM||{};
  }
  const DEFAULT={enabled:false,formula:'x^2',xMin:-5,xMax:5,yMin:-5,yMax:5,showGrid:true,showPoint:true,showTangent:false,pointStart:-3,pointEnd:3,graphY:58,graphScale:100};
  const GEO_TYPES=['circle','triangle','angle'];
- const geoClean=v=>({type:GEO_TYPES.includes(v?.type)?v.type:'circle',x:clamp(v?.x,.12,.88,.5),y:clamp(v?.y,.15,.85,.5),size:clamp(v?.size,55,370,185),rotation:clamp(v?.rotation,-180,180,0),color:['#e5484d','#226bb2','#1c9463','#173a5c','#ffffff','#f4d96c'].includes(v?.color)?v.color:'#226bb2',label:String(v?.label||'').slice(0,20),start:clamp(v?.start,0,99,0),end:clamp(v?.end,1,100,100)});
+ const DEFAULT_VERTICES=[[0,-.60],[-.57,.45],[.57,.45]];
+ const vertexClean=v=>Array.isArray(v)&&v.length===3?v.map((pt,i)=>[clamp(pt?.[0],-1.15,1.15,DEFAULT_VERTICES[i][0]),clamp(pt?.[1],-1.15,1.15,DEFAULT_VERTICES[i][1])]):DEFAULT_VERTICES.map(pt=>pt.slice());
+ // Returns the interior angles in degrees, opposite the corresponding vertices.
+ function triangleAngles(vertices){if(!Array.isArray(vertices)||vertices.length!==3)return null;
+  const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);const sides=[dist(vertices[1],vertices[2]),dist(vertices[0],vertices[2]),dist(vertices[0],vertices[1])];
+  if(sides.some(v=>!Number.isFinite(v)||v<1e-5))return null;
+  const twiceArea=Math.abs((vertices[1][0]-vertices[0][0])*(vertices[2][1]-vertices[0][1])-(vertices[1][1]-vertices[0][1])*(vertices[2][0]-vertices[0][0]));
+  if(twiceArea<1e-4)return null;
+  const angle=(a,b,c)=>Math.acos(Math.max(-1,Math.min(1,(b*b+c*c-a*a)/(2*b*c))))*180/Math.PI;
+  return [angle(sides[0],sides[1],sides[2]),angle(sides[1],sides[0],sides[2]),angle(sides[2],sides[0],sides[1])];
+ }
+ function vertexScreen(sh,pt){const a=sh.rotation*Math.PI/180,x=pt[0]*sh.size,y=pt[1]*sh.size;return [sh.x*1080+x*Math.cos(a)-y*Math.sin(a),sh.y*1920+x*Math.sin(a)+y*Math.cos(a)]}
+ function pointToLocal(sh,pt){const a=sh.rotation*Math.PI/180,x=(pt[0]*1080-sh.x*1080)/sh.size,y=(pt[1]*1920-sh.y*1920)/sh.size;return [x*Math.cos(a)+y*Math.sin(a),-x*Math.sin(a)+y*Math.cos(a)]}
+ function triangleMeasurements(sh){const a=triangleAngles(sh.vertices);return a?a.map(n=>n.toFixed(1)+'°').join(' · '):'رؤوس على استقامة واحدة أو متطابقة';}
+ const geoClean=v=>({type:GEO_TYPES.includes(v?.type)?v.type:'circle',x:clamp(v?.x,.12,.88,.5),y:clamp(v?.y,.15,.85,.5),size:clamp(v?.size,55,370,185),rotation:clamp(v?.rotation,-180,180,0),color:['#e5484d','#226bb2','#1c9463','#173a5c','#ffffff','#f4d96c'].includes(v?.color)?v.color:'#226bb2',label:String(v?.label||'').slice(0,20),vertices:vertexClean(v?.vertices),measure:v?.measure===true,start:clamp(v?.start,0,99,0),end:clamp(v?.end,1,100,100)});
  const PEN_COLORS=['#e5484d','#226bb2','#1c9463','#173a5c','#ffffff','#f4d96c'];
  function clean(x){const v=x||{};let xMin=clamp(v.xMin,-100,99,-5),xMax=clamp(v.xMax,xMin+.5,100,5);let yMin=clamp(v.yMin,-100,99,-5),yMax=clamp(v.yMax,yMin+.5,100,5);
   const steps=Array.isArray(v.steps)?v.steps.slice(0,6):[];
@@ -65,13 +79,18 @@ window.NM=window.NM||{};
    c.save();c.translate(cx,cy);c.rotate(sh.rotation*Math.PI/180);c.strokeStyle=sh.color;c.fillStyle=sh.color;c.lineWidth=6;c.lineCap='round';c.lineJoin='round';
    c.beginPath();
    if(sh.type==='circle'){c.arc(0,0,r/2,0,Math.PI*2)}
-   else if(sh.type==='triangle'){c.moveTo(0,-r*.60);c.lineTo(-r*.57,r*.45);c.lineTo(r*.57,r*.45);c.closePath()}
+   else if(sh.type==='triangle'){const v=sh.vertices;c.moveTo(v[0][0]*r,v[0][1]*r);for(let i=1;i<3;i++)c.lineTo(v[i][0]*r,v[i][1]*r);c.closePath()}
    else {c.moveTo(r*.58,0);c.lineTo(0,0);c.lineTo(r*.3,-r*.52)}
    c.stroke();
    if(sh.type==='angle'){c.beginPath();c.arc(0,0,r*.23,-Math.PI/3,0);c.stroke()}
+   if(sh.type==='triangle'&&sh.measure){const angles=triangleAngles(sh.vertices);if(angles){for(let i=0;i<3;i++){const v=sh.vertices[i];c.beginPath();c.arc(v[0]*r,v[1]*r,7,0,2*Math.PI);c.fill();
+     c.save();c.translate(v[0]*r,v[1]*r);c.rotate(-sh.rotation*Math.PI/180);c.font='bold 27px system-ui';c.textAlign='center';c.textBaseline='middle';c.lineWidth=6;c.strokeStyle='rgba(255,255,255,.95)';const label=angles[i].toFixed(1)+'°';c.strokeText(label,0,-26);c.fillText(label,0,-26);c.restore();}}}
    if(sh.label){c.save();c.rotate(-sh.rotation*Math.PI/180);c.font='bold 38px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(sh.label,0,sh.type==='circle'?0:r*.70);c.restore()}
    c.restore();
   }
+ }
+ function guides(c,scene){const g=scene?.mathStudio,sh=g?.geometry?.[geoSelected];if(!geoMode||!$('nmGeoVertexEdit')?.checked||sh?.type!=='triangle')return;
+  c.save();for(let i=0;i<3;i++){const [x,y]=vertexScreen(sh,sh.vertices[i]);c.beginPath();c.arc(x,y,21,0,2*Math.PI);c.fillStyle='rgba(255,255,255,.92)';c.fill();c.strokeStyle='#f08821';c.lineWidth=6;c.stroke();c.textAlign='center';c.textBaseline='middle';c.font='bold 22px system-ui';c.fillStyle='#193752';c.fillText('ABC'[i],x,y)}c.restore();
  }
  function drawStrokes(c,g){for(const st of g.strokes){if(!st.pts.length)continue;c.save();c.lineWidth=st.size;c.strokeStyle=st.color;c.lineCap='round';c.lineJoin='round';c.beginPath();st.pts.forEach((pt,i)=>{const x=pt[0]*1080,y=pt[1]*1920;if(!i)c.moveTo(x,y);else c.lineTo(x,y)});if(st.pts.length===1){c.arc(st.pts[0][0]*1080,st.pts[0][1]*1920,st.size/2,0,Math.PI*2);c.fillStyle=st.color;c.fill()}else c.stroke();c.restore()}}
  function draw(c,scene,p,fg,math){const g=scene.mathStudio||clean();drawGraph(c,g,p,fg);
@@ -102,10 +121,11 @@ window.NM=window.NM||{};
   for(const [id,value] of Object.entries({nmGeoSize:sh?.size??185,nmGeoRotation:sh?.rotation??0,nmGeoColor:sh?.color??'#226bb2',nmGeoLabel:sh?.label??'',nmGeoStart:sh?.start??0,nmGeoEnd:sh?.end??100})){
    const el=$(id);if(el&&document.activeElement!==el)el.value=value;
   }
+  const measure=$('nmGeoMeasure');if(measure)measure.checked=!!sh?.measure;const info=$('nmGeoAngles');if(info)info.textContent=sh?.type==='triangle'?triangleMeasurements(sh):'اختر مثلثاً لعرض قياس الزوايا';const edit=$('nmGeoVertexMode');if(edit)edit.hidden=sh?.type!=='triangle';
   const toggle=$('nmGeoMove');if(toggle){toggle.textContent=geoMode?'إيقاف تحريك الشكل':'تحريك الشكل باللمس';toggle.setAttribute('aria-pressed',String(geoMode))}
  }
  function updateGeo(){if(bridge.playing())return;const g=projectScene()?.mathStudio,sh=g?.geometry[geoSelected];if(!sh)return;
-  const v=geoClean({...sh,size:$('nmGeoSize').value,rotation:$('nmGeoRotation').value,color:$('nmGeoColor').value,label:$('nmGeoLabel').value,start:$('nmGeoStart').value,end:$('nmGeoEnd').value});
+  const v=geoClean({...sh,size:$('nmGeoSize').value,rotation:$('nmGeoRotation').value,color:$('nmGeoColor').value,label:$('nmGeoLabel').value,start:$('nmGeoStart').value,end:$('nmGeoEnd').value,measure:$('nmGeoMeasure').checked});
   if(v.end<=v.start)v.end=Math.min(100,v.start+1);
   g.geometry[geoSelected]=v;bridge.commit();refreshGeometry();
  }
@@ -114,21 +134,26 @@ window.NM=window.NM||{};
   if(geoMode&&!bridge.playing()){
    const g=projectScene()?.mathStudio,sh=g?.geometry[geoSelected];if(!sh)return false;
    const pt=coords(e),distance=Math.hypot((pt[0]-sh.x)*1080,(pt[1]-sh.y)*1920);
-   if(distance>Math.max(95,sh.size))return false;
-   geoGesture={id:e.pointerId,x:sh.x,y:sh.y,start:pt};$('stage').setPointerCapture(e.pointerId);return true;
+   let vertex=-1;
+   if(sh.type==='triangle'&&$('nmGeoVertexEdit')?.checked){const scale=$('stage').getBoundingClientRect().width/1080;
+    let closest=46;sh.vertices.forEach((v,i)=>{const xy=vertexScreen(sh,v);const d=Math.hypot((pt[0]*1080-xy[0])*scale,(pt[1]*1920-xy[1])*scale);if(d<closest){closest=d;vertex=i}});
+    if(vertex<0){bridge.status('المس أحد رؤوس المثلث لتغييره');return true;}
+   }else if(distance>Math.max(95,sh.size))return false;
+   geoGesture={id:e.pointerId,shape:sh,x:sh.x,y:sh.y,start:pt,vertex};$('stage').setPointerCapture(e.pointerId);return true;
   }
   if(!pen||bridge.playing())return false;const g=projectScene().mathStudio;if(g.strokes.length>=80){bridge.status('الحد الأقصى 80 تأشيراً في المشهد');return true}
   const stroke={color:penColor,size:penSize,pts:[coords(e)]};g.strokes.push(stroke);gesture={id:e.pointerId,stroke};$('stage').setPointerCapture(e.pointerId);bridge.draw();return true;
  }
- function pointerMove(e){if(geoGesture&&e.pointerId===geoGesture.id){const pt=coords(e),sh=projectScene()?.mathStudio?.geometry[geoSelected];if(!sh)return false;sh.x=clamp(geoGesture.x+pt[0]-geoGesture.start[0],.12,.88,.5);sh.y=clamp(geoGesture.y+pt[1]-geoGesture.start[1],.15,.85,.5);bridge.draw();return true}if(!gesture||e.pointerId!==gesture.id)return false;const pts=gesture.stroke.pts,p=coords(e),prev=pts.at(-1);if(pts.length<700&&Math.hypot(p[0]-prev[0],p[1]-prev[1])>.001){pts.push(p);bridge.draw()}return true}
- function pointerEnd(e){if(geoGesture&&e.pointerId===geoGesture.id){geoGesture=null;bridge.commit();return true}if(!gesture||e.pointerId!==gesture.id)return false;gesture=null;bridge.commit();return true}
+ function pointerMove(e){if(geoGesture&&e.pointerId===geoGesture.id){const pt=coords(e),sh=geoGesture.shape;if(!sh)return false;if(geoGesture.vertex>=0){sh.vertices[geoGesture.vertex]=pointToLocal(sh,pt).map(n=>clamp(n,-1.15,1.15,0))}else{sh.x=clamp(geoGesture.x+pt[0]-geoGesture.start[0],.12,.88,.5);sh.y=clamp(geoGesture.y+pt[1]-geoGesture.start[1],.15,.85,.5)}bridge.draw();return true}if(!gesture||e.pointerId!==gesture.id)return false;const pts=gesture.stroke.pts,p=coords(e),prev=pts.at(-1);if(pts.length<700&&Math.hypot(p[0]-prev[0],p[1]-prev[1])>.001){pts.push(p);bridge.draw()}return true}
+ function pointerEnd(e){if(geoGesture&&e.pointerId===geoGesture.id){geoGesture=null;bridge.commit();refreshGeometry();return true}if(!gesture||e.pointerId!==gesture.id)return false;gesture=null;bridge.commit();return true}
  function init(api){bridge=api;
   $('nmGeoAdd').addEventListener('click',()=>{if(bridge.playing())return;const g=projectScene().mathStudio;if(g.geometry.length>=30){bridge.status('الحد الأقصى 30 شكلاً في المشهد');return}const type=$('nmGeoType').value;g.geometry.push(geoClean({type,x:.5,y:.5,size:185}));geoSelected=g.geometry.length-1;bridge.commit();refreshGeometry()});
   $('nmGeoSelect').addEventListener('change',e=>{geoSelected=Number(e.target.value)||0;refreshGeometry()});
   $('nmGeoDelete').addEventListener('click',()=>{if(bridge.playing())return;const g=projectScene().mathStudio;if(!g.geometry.length||!confirm('حذف الشكل المحدد؟'))return;g.geometry.splice(geoSelected,1);geoSelected=Math.max(0,geoSelected-1);geoMode=false;bridge.commit();refreshGeometry()});
   $('nmGeoMove').addEventListener('click',()=>{geoMode=!geoMode;if(geoMode)pen=false;refresh();bridge.status(geoMode?'المس الشكل واسحبه في المعاينة':'انتهى تحريك الشكل')});
-  for(const id of ['nmGeoSize','nmGeoRotation','nmGeoColor','nmGeoLabel','nmGeoStart','nmGeoEnd'])$(id).addEventListener('change',updateGeo);
+  for(const id of ['nmGeoSize','nmGeoRotation','nmGeoColor','nmGeoLabel','nmGeoStart','nmGeoEnd','nmGeoMeasure'])$(id).addEventListener('change',updateGeo);
 
+  $('nmGeoResetVertices').addEventListener('click',()=>{if(bridge.playing())return;const sh=projectScene()?.mathStudio?.geometry[geoSelected];if(sh?.type!=='triangle')return;sh.vertices=vertexClean();bridge.commit();refreshGeometry()});
   ids.forEach(id=>{const el=$(id);if(el)el.addEventListener(el.type==='checkbox'?'change':id==='nmMathSteps'||id==='nmGraphFormula'?'change':'change',apply)});
   $('nmPenToggle').addEventListener('click',()=>{pen=!pen;if(pen)geoMode=false;refresh();bridge.status(pen?'القلم مفعل: ارسم داخل معاينة الفيديو، ثم أوقفه للعودة للتحرير.':'تم إيقاف القلم')});
   $('nmPenUndo').addEventListener('click',()=>{const g=projectScene().mathStudio;if(!g.strokes.length)return;g.strokes.pop();bridge.commit()});
@@ -137,5 +162,5 @@ window.NM=window.NM||{};
   $('nmPenSize').addEventListener('input',e=>penSize=clamp(e.target.value,2,24,7));
   refresh();
  }
- NM.mathStudio={clean,compile,draw,drawGeometry,geoClean,mathPairs,refresh,init,pointerDown,pointerMove,pointerEnd};
+ NM.mathStudio={clean,compile,draw,drawGeometry,geoClean,triangleAngles,vertexScreen,pointToLocal,guides,mathPairs,refresh,init,pointerDown,pointerMove,pointerEnd};
 })(window.NM);

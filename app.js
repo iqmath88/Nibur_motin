@@ -269,7 +269,7 @@ function render(p=1,options={guides:!exporting}){
  NM.overlays.progress(ctx,state.overlays,absoluteTime,seconds());
  NM.captions.draw(ctx,state,subtitleTimeline,absoluteTime);
  NM.mathStudio.draw(ctx,scene,p,fg,(raw,x,y,w,h,color)=>math(ctx,raw,x,y,w,h,color));drawStickers(ctx,scene,p);NM.freeEditor.draw(ctx,scene,p,{math:(raw,x,y,w,h,color)=>math(ctx,raw,x,y,w,h,color),font:(role,weight,size)=>NM.font(role,weight,size),text});
- if(options.guides){selectionBox(ctx,scene);NM.freeEditor.guides(ctx,scene);NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
+ if(options.guides){selectionBox(ctx,scene);NM.freeEditor.guides(ctx,scene);NM.mathStudio.guides(ctx,scene);NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
  ctx.restore();updateSeek();NM.timelineEditor.position?.();
 }
 

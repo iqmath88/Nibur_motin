@@ -127,3 +127,8 @@
 .nm-math-studio #nmGeoSelect,.nm-math-studio #nmGeoType{min-height:44px;max-width:100%}
 .nm-math-studio #nmGeoMove[aria-pressed="true"]{outline:2px solid #4f9ed0;outline-offset:2px}
 @media (max-width:480px){.nm-math-studio #nmGeoLabel,.nm-math-studio #nmGeoRotation,.nm-math-studio #nmGeoStart,.nm-math-studio #nmGeoEnd{font-size:16px}}
+
+/* v0.12 geometry touch edit */
+.nm-geometry-edit{border:1px solid #c5d9eb;border-radius:12px;padding:10px;background:#f2f8ff;margin:10px 0}
+.nm-geometry-edit .inline-setting{display:flex!important;align-items:center;gap:9px;min-height:44px}.nm-geometry-edit input[type=checkbox]{flex:0 0 22px;width:22px;height:22px}
+.nm-geometry-edit #nmGeoAngles{font-weight:700;color:#164b7c;direction:ltr;text-align:center;min-height:22px}
