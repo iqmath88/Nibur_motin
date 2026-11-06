@@ -1,7 +1,22 @@
-# Nibor Motion v0.9.0 — Mobile visual layers
+# Nibor Motion v0.10.1 — تحرير توقيت المسارات على الهاتف
 
-Adds independent scene layers (text and LaTeX), stacking, direct drag and resize, duplicate, centering, lock, delete, and undo/redo (up to 45 checkpoints). The project still uses the same render() canvas for preview and export. Old JSON loads with an empty layers array. Does not embed audio in JSON.
+تحديث مبني على v0.10.0 دون أدوات بناء أو مكتبات جديدة.
 
-Upload root files to GitHub Pages and retain the fonts directory. MathJax and MathLive still load over CDN. Test on a Galaxy S25 Ultra (Chrome/Samsung Internet) before replacing a production deployment.
+## الجديد
+- مسارات السؤال والمعادلة والنتيجة قابلة لتحديد العنصر، وتحرير بداية الظهور بالثواني أو بسحب مقبض المسار. تنتهي هذه العناصر عند نهاية المشهد وفق سلوك المحرك الأصلي.
+- مسارات الملصقات قابلة لتعديل البداية والنهاية بمقابض لمس أو من حقول الوقت.
+- تزامن التغييرات مع حقول إعدادات المشهد الأصلية وحفظ JSON وCanvas.
+- تعليق صوتي معروض مرجعياً فقط؛ لا يمكن قصه بعد.
+- تحسين حجم مقابض الزمن وأهداف اللمس على الهواتف بما فيها Galaxy S25 Ultra.
+- لا تغيير على بنية بيانات المشاريع، ولا تغيير على دالة render.
 
-Known limits: free layer math rendering requires MathJax loading; layer visibility and timing are scene-wide; undo/redo restores JSON state but does not roll back external audio files stored in IndexedDB.
+## تجربة
+1. افتح مشهداً وحدد مسار السؤال، واسحب مقبض بدايته إلى وقت جديد.
+2. جرّب ملصقاً وحدد بدايته ونهايته ثم شاهد المعاينة والتصدير.
+3. احفظ المشروع، وأعد فتحه، وتحقق من التوقيت.
+
+## حدود
+- لا يوجد قص مباشر للموجات الصوتية أو تحريك للمسار الصوتي.
+- لا تزال إطارات الحركة المفتاحية متاحة للعناصر الحرة فقط.
+- التطبيق يعتمد MathJax/MathLive خارجيين لأول تحميل، وMP4 يعتمد قدرات المتصفح.
+- يلزم اختبار لمس وتصدير يدوي على هاتف Android فعلي.
