@@ -57,6 +57,19 @@ window.addEventListener('DOMContentLoaded',()=>{
 <hr><label for="nmMathSteps">خطوات الحل — LaTeX (خطوة في كل سطر، حتى 6 خطوات)</label><textarea id="nmMathSteps" rows="5" dir="ltr" placeholder="x^2=9&#10;x=\pm\sqrt{9}&#10;x=\pm3"></textarea>
 <div class="nm-math-grid"><label>بدء عرض الخطوات % <input type="number" id="nmStepStart" min="0" max="95" value="20"></label><label>الفاصل بين الخطوات % <input type="number" id="nmStepGap" min="2" max="50" value="15"></label></div>
 <p class="muted">تُعرض الخطوات أسفل الرسم بالتتابع حسب تقدم المشهد. راجع مواضع النصوص عند الجمع بين الرسم والخطوات.</p>
+<hr><strong>📐 الأشكال الهندسية</strong>
+<p class="muted">أضف دائرة أو مثلثاً أو زاوية. حدد الشكل ثم اضغط «تحريك الشكل باللمس» واسحبه داخل المعاينة. تظهر الأشكال في الفيديو المصدّر.</p>
+<div class="nm-free-actions"><select id="nmGeoType" aria-label="نوع الشكل"><option value="circle">دائرة</option><option value="triangle">مثلث</option><option value="angle">زاوية</option></select><button type="button" id="nmGeoAdd">+ إضافة شكل</button></div>
+<label for="nmGeoSelect">الشكل المحدد</label><select id="nmGeoSelect" aria-label="الشكل المحدد"></select>
+<div class="nm-math-grid">
+<label>حجم الشكل <input id="nmGeoSize" type="range" min="55" max="370" value="185"></label>
+<label>الدوران (درجة) <input id="nmGeoRotation" type="number" min="-180" max="180" value="0"></label>
+<label>لون الخط <input id="nmGeoColor" type="color" value="#226bb2"></label>
+<label>تسمية الشكل <input id="nmGeoLabel" maxlength="20" placeholder="A أو 60°"></label>
+<label>بداية الظهور % <input id="nmGeoStart" type="number" min="0" max="99" value="0"></label>
+<label>نهاية الظهور % <input id="nmGeoEnd" type="number" min="1" max="100" value="100"></label>
+</div>
+<div class="nm-free-actions"><button type="button" id="nmGeoMove">تحريك الشكل باللمس</button><button type="button" class="secondary" id="nmGeoDelete">حذف الشكل</button></div>
 <hr><strong>قلم التأشير على الفيديو</strong><div class="nm-free-actions"><button id="nmPenToggle" type="button">تفعيل القلم</button><button id="nmPenUndo" class="secondary" type="button">تراجع عن آخر خط</button><button id="nmPenClear" class="secondary" type="button">مسح التأشير</button></div><div class="nm-math-grid"><label>لون القلم <select id="nmPenColor"><option value="#e5484d">أحمر</option><option value="#226bb2">أزرق</option><option value="#1c9463">أخضر</option><option value="#173a5c">كحلي</option><option value="#ffffff">أبيض</option><option value="#f4d96c">أصفر</option></select></label><label>سماكة القلم <input type="range" id="nmPenSize" min="2" max="24" value="7"></label></div><p class="muted">تُحفظ خطوط القلم داخل المشهد وتظهر في التصدير. أوقف القلم قبل سحب العناصر الأخرى.</p>
 </details><details class="nm-settings"><summary>حركة المعادلة</summary>
 <label for="equationAnim">نوع الحركة</label><select id="equationAnim"><option value="fade">ظهور تدريجي</option><option value="write">كتابة تدريجية</option><option value="highlight">تمييز جزء من المعادلة</option><option value="fromPrevious">انتقال من المعادلة السابقة</option></select>

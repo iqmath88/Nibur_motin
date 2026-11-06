@@ -123,3 +123,7 @@
 
 /* Nibor Motion v0.11.0 – Math Studio (phone-first) */
 .nm-math-studio{border:1px solid rgba(99,135,175,.35);border-radius:14px;padding:12px;margin:12px 0}.nm-math-studio summary{cursor:pointer;font-weight:700;line-height:1.8}.nm-math-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.nm-math-grid label{min-width:0;display:flex;flex-direction:column;gap:5px}.nm-math-grid input,.nm-math-grid select{max-width:100%;min-width:0;box-sizing:border-box}.nm-math-studio #nmMathSteps{width:100%;box-sizing:border-box;min-height:105px;direction:ltr}.nm-math-studio hr{border:0;border-top:1px solid rgba(120,145,165,.25);margin:18px 0}.nm-math-studio .nm-free-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.nm-math-studio button{min-height:42px}.nm-math-studio .inline-setting{display:inline-flex;align-items:center;gap:8px}@media(max-width:480px){.nm-math-grid{gap:8px}.nm-math-studio{padding:10px}.nm-math-studio input[type=number]{font-size:16px}}
+/* v0.11.1: touch-friendly geometry controls */
+.nm-math-studio #nmGeoSelect,.nm-math-studio #nmGeoType{min-height:44px;max-width:100%}
+.nm-math-studio #nmGeoMove[aria-pressed="true"]{outline:2px solid #4f9ed0;outline-offset:2px}
+@media (max-width:480px){.nm-math-studio #nmGeoLabel,.nm-math-studio #nmGeoRotation,.nm-math-studio #nmGeoStart,.nm-math-studio #nmGeoEnd{font-size:16px}}

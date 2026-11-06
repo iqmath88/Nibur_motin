@@ -24,13 +24,15 @@ window.NM=window.NM||{};
   const fn=expr();if(pos!==toks.length)throw Error('تحقق من الأقواس أو علامات العمليات');return x=>{const y=fn(x);return Number.isFinite(y)?y:NaN};
  }
  const DEFAULT={enabled:false,formula:'x^2',xMin:-5,xMax:5,yMin:-5,yMax:5,showGrid:true,showPoint:true,showTangent:false,pointStart:-3,pointEnd:3,graphY:58,graphScale:100};
+ const GEO_TYPES=['circle','triangle','angle'];
+ const geoClean=v=>({type:GEO_TYPES.includes(v?.type)?v.type:'circle',x:clamp(v?.x,.12,.88,.5),y:clamp(v?.y,.15,.85,.5),size:clamp(v?.size,55,370,185),rotation:clamp(v?.rotation,-180,180,0),color:['#e5484d','#226bb2','#1c9463','#173a5c','#ffffff','#f4d96c'].includes(v?.color)?v.color:'#226bb2',label:String(v?.label||'').slice(0,20),start:clamp(v?.start,0,99,0),end:clamp(v?.end,1,100,100)});
  const PEN_COLORS=['#e5484d','#226bb2','#1c9463','#173a5c','#ffffff','#f4d96c'];
  function clean(x){const v=x||{};let xMin=clamp(v.xMin,-100,99,-5),xMax=clamp(v.xMax,xMin+.5,100,5);let yMin=clamp(v.yMin,-100,99,-5),yMax=clamp(v.yMax,yMin+.5,100,5);
   const steps=Array.isArray(v.steps)?v.steps.slice(0,6):[];
   const strokes=Array.isArray(v.strokes)?v.strokes.slice(0,80).map(st=>({color:PEN_COLORS.includes(st?.color)?st.color:PEN_COLORS[0],size:clamp(st?.size,2,24,7),pts:Array.isArray(st?.pts)?st.pts.slice(0,700).map(p=>[clamp(p?.[0],0,1,.5),clamp(p?.[1],0,1,.5)]):[]})).filter(st=>st.pts.length):[];
-  return {enabled:v.enabled===true,formula:String(v.formula??'x^2').slice(0,120),xMin,xMax,yMin,yMax,showGrid:v.showGrid!==false,showPoint:v.showPoint!==false,showTangent:v.showTangent===true,pointStart:clamp(v.pointStart,-100,100,-3),pointEnd:clamp(v.pointEnd,-100,100,3),graphY:clamp(v.graphY,32,76,58),graphScale:clamp(v.graphScale,60,115,100),steps:steps.map(s=>String(s??'').slice(0,250)),stepStart:clamp(v.stepStart,0,95,20),stepGap:clamp(v.stepGap,2,50,15),strokes};
+  return {enabled:v.enabled===true,formula:String(v.formula??'x^2').slice(0,120),xMin,xMax,yMin,yMax,showGrid:v.showGrid!==false,showPoint:v.showPoint!==false,showTangent:v.showTangent===true,pointStart:clamp(v.pointStart,-100,100,-3),pointEnd:clamp(v.pointEnd,-100,100,3),graphY:clamp(v.graphY,32,76,58),graphScale:clamp(v.graphScale,60,115,100),steps:steps.map(s=>String(s??'').slice(0,250)),stepStart:clamp(v.stepStart,0,95,20),stepGap:clamp(v.stepGap,2,50,15),strokes,geometry:Array.isArray(v.geometry)?v.geometry.slice(0,30).map(geoClean):[]};
  }
- let bridge=null, pen=false,gesture=null,penColor=PEN_COLORS[0],penSize=7;
+ let bridge=null, pen=false,gesture=null,geoMode=false,geoGesture=null,geoSelected=0,penColor=PEN_COLORS[0],penSize=7;
  const projectScene=()=>bridge?.scene();
  let lastError='';
  function drawGraph(c,g,p,fg){if(!g.enabled)return;
@@ -57,16 +59,31 @@ window.NM=window.NM||{};
   }
   c.restore();c.save();c.strokeStyle='rgba(85,111,140,.65)';c.lineWidth=2;c.strokeRect(l,t,W,H);c.font='bold 26px system-ui';c.fillStyle=fg;c.textAlign='center';c.fillText('y = '+g.formula,cx,t-17,850);c.restore();
  }
+ function drawGeometry(c,g,p){
+  for(const sh of g.geometry||[]){if(p*100<sh.start||p*100>sh.end)continue;
+   const cx=sh.x*1080,cy=sh.y*1920,r=sh.size;
+   c.save();c.translate(cx,cy);c.rotate(sh.rotation*Math.PI/180);c.strokeStyle=sh.color;c.fillStyle=sh.color;c.lineWidth=6;c.lineCap='round';c.lineJoin='round';
+   c.beginPath();
+   if(sh.type==='circle'){c.arc(0,0,r/2,0,Math.PI*2)}
+   else if(sh.type==='triangle'){c.moveTo(0,-r*.60);c.lineTo(-r*.57,r*.45);c.lineTo(r*.57,r*.45);c.closePath()}
+   else {c.moveTo(r*.58,0);c.lineTo(0,0);c.lineTo(r*.3,-r*.52)}
+   c.stroke();
+   if(sh.type==='angle'){c.beginPath();c.arc(0,0,r*.23,-Math.PI/3,0);c.stroke()}
+   if(sh.label){c.save();c.rotate(-sh.rotation*Math.PI/180);c.font='bold 38px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(sh.label,0,sh.type==='circle'?0:r*.70);c.restore()}
+   c.restore();
+  }
+ }
  function drawStrokes(c,g){for(const st of g.strokes){if(!st.pts.length)continue;c.save();c.lineWidth=st.size;c.strokeStyle=st.color;c.lineCap='round';c.lineJoin='round';c.beginPath();st.pts.forEach((pt,i)=>{const x=pt[0]*1080,y=pt[1]*1920;if(!i)c.moveTo(x,y);else c.lineTo(x,y)});if(st.pts.length===1){c.arc(st.pts[0][0]*1080,st.pts[0][1]*1920,st.size/2,0,Math.PI*2);c.fillStyle=st.color;c.fill()}else c.stroke();c.restore()}}
  function draw(c,scene,p,fg,math){const g=scene.mathStudio||clean();drawGraph(c,g,p,fg);
   if(g.steps.length){const count=g.steps.length;for(let i=0;i<count;i++){if(p*100<g.stepStart+i*g.stepGap)continue;const latex=g.steps[i];if(!latex.trim())continue;const y=1460+i*Math.min(90,Math.floor(320/Math.max(1,count)));math(latex,540,y,900,80,fg)}}
-  drawStrokes(c,g);
+  drawGeometry(c,g,p);drawStrokes(c,g);
  }
  function mathPairs(s,fg){return (s.mathStudio?.steps||[]).filter(x=>x.trim()).map(x=>[x,fg])}
  const ids=['nmGraphEnable','nmGraphFormula','nmGraphXmin','nmGraphXmax','nmGraphYmin','nmGraphYmax','nmGraphGrid','nmGraphPoint','nmGraphTangent','nmGraphFrom','nmGraphTo','nmGraphPosition','nmGraphScale','nmMathSteps','nmStepStart','nmStepGap'];
  function refresh(){const g=projectScene()?.mathStudio;if(!g)return;const map={nmGraphEnable:g.enabled,nmGraphFormula:g.formula,nmGraphXmin:g.xMin,nmGraphXmax:g.xMax,nmGraphYmin:g.yMin,nmGraphYmax:g.yMax,nmGraphGrid:g.showGrid,nmGraphPoint:g.showPoint,nmGraphTangent:g.showTangent,nmGraphFrom:g.pointStart,nmGraphTo:g.pointEnd,nmGraphPosition:g.graphY,nmGraphScale:g.graphScale,nmMathSteps:g.steps.join('\n'),nmStepStart:g.stepStart,nmStepGap:g.stepGap};
   for(const id of ids){const el=$(id);if(!el||document.activeElement===el)continue;if(el.type==='checkbox')el.checked=!!map[id];else el.value=map[id]}
   const active=$('nmPenToggle');if(active){active.textContent=pen?'إيقاف القلم':'تفعيل القلم';active.setAttribute('aria-pressed',String(pen))}
+  refreshGeometry();
   if($('nmGraphError'))$('nmGraphError').textContent=lastError?'خطأ في الدالة: '+lastError:'';
  }
  function apply(){if(bridge.playing())return;const s=projectScene(),g=s.mathStudio;
@@ -75,20 +92,50 @@ window.NM=window.NM||{};
   if(next.enabled){try{compile(next.formula);lastError=''}catch(e){lastError=e.message}}
   s.mathStudio=next;bridge.commit();bridge.prewarm();refresh();
  }
+ function refreshGeometry(){
+  const g=projectScene()?.mathStudio;if(!g)return;
+  const sel=$('nmGeoSelect');if(!sel)return;
+  const prev=String(geoSelected);sel.replaceChildren();
+  (g.geometry||[]).forEach((sh,i)=>{const opt=document.createElement('option');opt.value=String(i);opt.textContent=`${i+1}. ${sh.type==='circle'?'دائرة':sh.type==='triangle'?'مثلث':'زاوية'}${sh.label?' — '+sh.label:''}`;sel.append(opt)});
+  geoSelected=Math.min(Math.max(0,Number(prev)||0),Math.max(0,g.geometry.length-1));sel.value=String(geoSelected);
+  const sh=g.geometry[geoSelected];
+  for(const [id,value] of Object.entries({nmGeoSize:sh?.size??185,nmGeoRotation:sh?.rotation??0,nmGeoColor:sh?.color??'#226bb2',nmGeoLabel:sh?.label??'',nmGeoStart:sh?.start??0,nmGeoEnd:sh?.end??100})){
+   const el=$(id);if(el&&document.activeElement!==el)el.value=value;
+  }
+  const toggle=$('nmGeoMove');if(toggle){toggle.textContent=geoMode?'إيقاف تحريك الشكل':'تحريك الشكل باللمس';toggle.setAttribute('aria-pressed',String(geoMode))}
+ }
+ function updateGeo(){if(bridge.playing())return;const g=projectScene()?.mathStudio,sh=g?.geometry[geoSelected];if(!sh)return;
+  const v=geoClean({...sh,size:$('nmGeoSize').value,rotation:$('nmGeoRotation').value,color:$('nmGeoColor').value,label:$('nmGeoLabel').value,start:$('nmGeoStart').value,end:$('nmGeoEnd').value});
+  if(v.end<=v.start)v.end=Math.min(100,v.start+1);
+  g.geometry[geoSelected]=v;bridge.commit();refreshGeometry();
+ }
  function coords(e){const r=$('stage').getBoundingClientRect();return [clamp((e.clientX-r.left)/r.width,0,1,.5),clamp((e.clientY-r.top)/r.height,0,1,.5)]}
- function pointerDown(e){if(!pen||bridge.playing())return false;const g=projectScene().mathStudio;if(g.strokes.length>=80){bridge.status('الحد الأقصى 80 تأشيراً في المشهد');return true}
+ function pointerDown(e){
+  if(geoMode&&!bridge.playing()){
+   const g=projectScene()?.mathStudio,sh=g?.geometry[geoSelected];if(!sh)return false;
+   const pt=coords(e),distance=Math.hypot((pt[0]-sh.x)*1080,(pt[1]-sh.y)*1920);
+   if(distance>Math.max(95,sh.size))return false;
+   geoGesture={id:e.pointerId,x:sh.x,y:sh.y,start:pt};$('stage').setPointerCapture(e.pointerId);return true;
+  }
+  if(!pen||bridge.playing())return false;const g=projectScene().mathStudio;if(g.strokes.length>=80){bridge.status('الحد الأقصى 80 تأشيراً في المشهد');return true}
   const stroke={color:penColor,size:penSize,pts:[coords(e)]};g.strokes.push(stroke);gesture={id:e.pointerId,stroke};$('stage').setPointerCapture(e.pointerId);bridge.draw();return true;
  }
- function pointerMove(e){if(!gesture||e.pointerId!==gesture.id)return false;const pts=gesture.stroke.pts,p=coords(e),prev=pts.at(-1);if(pts.length<700&&Math.hypot(p[0]-prev[0],p[1]-prev[1])>.001){pts.push(p);bridge.draw()}return true}
- function pointerEnd(e){if(!gesture||e.pointerId!==gesture.id)return false;gesture=null;bridge.commit();return true}
+ function pointerMove(e){if(geoGesture&&e.pointerId===geoGesture.id){const pt=coords(e),sh=projectScene()?.mathStudio?.geometry[geoSelected];if(!sh)return false;sh.x=clamp(geoGesture.x+pt[0]-geoGesture.start[0],.12,.88,.5);sh.y=clamp(geoGesture.y+pt[1]-geoGesture.start[1],.15,.85,.5);bridge.draw();return true}if(!gesture||e.pointerId!==gesture.id)return false;const pts=gesture.stroke.pts,p=coords(e),prev=pts.at(-1);if(pts.length<700&&Math.hypot(p[0]-prev[0],p[1]-prev[1])>.001){pts.push(p);bridge.draw()}return true}
+ function pointerEnd(e){if(geoGesture&&e.pointerId===geoGesture.id){geoGesture=null;bridge.commit();return true}if(!gesture||e.pointerId!==gesture.id)return false;gesture=null;bridge.commit();return true}
  function init(api){bridge=api;
+  $('nmGeoAdd').addEventListener('click',()=>{if(bridge.playing())return;const g=projectScene().mathStudio;if(g.geometry.length>=30){bridge.status('الحد الأقصى 30 شكلاً في المشهد');return}const type=$('nmGeoType').value;g.geometry.push(geoClean({type,x:.5,y:.5,size:185}));geoSelected=g.geometry.length-1;bridge.commit();refreshGeometry()});
+  $('nmGeoSelect').addEventListener('change',e=>{geoSelected=Number(e.target.value)||0;refreshGeometry()});
+  $('nmGeoDelete').addEventListener('click',()=>{if(bridge.playing())return;const g=projectScene().mathStudio;if(!g.geometry.length||!confirm('حذف الشكل المحدد؟'))return;g.geometry.splice(geoSelected,1);geoSelected=Math.max(0,geoSelected-1);geoMode=false;bridge.commit();refreshGeometry()});
+  $('nmGeoMove').addEventListener('click',()=>{geoMode=!geoMode;if(geoMode)pen=false;refresh();bridge.status(geoMode?'المس الشكل واسحبه في المعاينة':'انتهى تحريك الشكل')});
+  for(const id of ['nmGeoSize','nmGeoRotation','nmGeoColor','nmGeoLabel','nmGeoStart','nmGeoEnd'])$(id).addEventListener('change',updateGeo);
+
   ids.forEach(id=>{const el=$(id);if(el)el.addEventListener(el.type==='checkbox'?'change':id==='nmMathSteps'||id==='nmGraphFormula'?'change':'change',apply)});
-  $('nmPenToggle').addEventListener('click',()=>{pen=!pen;refresh();bridge.status(pen?'القلم مفعل: ارسم داخل معاينة الفيديو، ثم أوقفه للعودة للتحرير.':'تم إيقاف القلم')});
+  $('nmPenToggle').addEventListener('click',()=>{pen=!pen;if(pen)geoMode=false;refresh();bridge.status(pen?'القلم مفعل: ارسم داخل معاينة الفيديو، ثم أوقفه للعودة للتحرير.':'تم إيقاف القلم')});
   $('nmPenUndo').addEventListener('click',()=>{const g=projectScene().mathStudio;if(!g.strokes.length)return;g.strokes.pop();bridge.commit()});
   $('nmPenClear').addEventListener('click',()=>{const g=projectScene().mathStudio;if(!g.strokes.length||!confirm('حذف جميع خطوط القلم من هذا المشهد؟'))return;g.strokes=[];bridge.commit()});
   $('nmPenColor').addEventListener('change',e=>{penColor=PEN_COLORS.includes(e.target.value)?e.target.value:PEN_COLORS[0]});
   $('nmPenSize').addEventListener('input',e=>penSize=clamp(e.target.value,2,24,7));
   refresh();
  }
- NM.mathStudio={clean,compile,draw,mathPairs,refresh,init,pointerDown,pointerMove,pointerEnd};
+ NM.mathStudio={clean,compile,draw,drawGeometry,geoClean,mathPairs,refresh,init,pointerDown,pointerMove,pointerEnd};
 })(window.NM);
