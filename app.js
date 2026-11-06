@@ -532,6 +532,7 @@ function speechFromMath(tex){
   let x=String(tex||'').trim();if(!x)return '';
   // Common school formulas only; teacher must review complex TeX before generating audio.
   for(let i=0;i<3;i++)x=x.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g,'البسط $1 على المقام $2');
+  x=x.replace(/\bi\s*\^\s*\{?(-?\d+)\}?/gi,'العدد التخيلي آي أس $1')
   x=x.replace(/\\sqrt\{([^{}]+)\}/g,'الجذر التربيعي لـ $1')
    .replace(/\\log_\{([^{}]+)\}/g,'لوغاريتم للأساس $1 ')
    .replace(/\\log/g,'لوغاريتم ')
@@ -547,6 +548,7 @@ function speechFromMath(tex){
    .replace(/[{}$]/g,' ').replace(/\s+/g,' ').trim();
   return x;
 }
+window.NM=window.NM||{};window.NM.speechFromMath=speechFromMath;
 function preparedNarration(scene){
  const bits=[scene.title,scene.question,speechFromMath(scene.equation),scene.answer?'النتيجة النهائية: '+speechFromMath(scene.answer):''];
  return bits.filter(Boolean).join('. ').replace(/\.{2,}/g,'.');
