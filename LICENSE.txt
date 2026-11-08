@@ -1,11 +1,4 @@
-Font files are NOT included in this package.
-
-Required optional fonts are SIL Open Font License 1.1 licensed families:
-- Cairo Bold (weight 700): fonts/Cairo-Bold.woff2
-- Noto Sans Arabic Regular (weight 400): fonts/NotoSansArabic-Regular.woff2
-- Noto Sans Arabic Bold (weight 700): fonts/NotoSansArabic-Bold.woff2
-
-Download these families from their official repositories (Google Fonts font repositories),
-read and include each family's original OFL.txt license when adding the fonts.
-See README.md for source links. This explanatory file is not a substitute for
-an original font copyright notice or OFL license file.
+Embedded fonts (SIL Open Font License 1.1):
+- Cairo Bold (700): cairo-arabic-700-normal.woff2, cairo-latin-700-normal.woff2 — see OFL-Cairo.txt
+- Noto Sans Arabic Regular/Bold (400/700): noto-sans-arabic-*-normal.woff2 — see OFL-NotoSansArabic.txt
+Font files are the unmodified Arabic and Latin subsets distributed by Fontsource (@fontsource/cairo, @fontsource/noto-sans-arabic).

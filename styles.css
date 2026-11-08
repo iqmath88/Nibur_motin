@@ -275,3 +275,14 @@ body.studio-ready{background:#edf2f7;color:#182e46}
  .studio-ready.studio-drawer-open .editor-panel,.studio-ready.studio-drawer-open .scenes-panel{top:45dvh}
  .studio-ready.studio-drawer-open .mobile-sheet-head:not([hidden]){top:calc(45dvh + 4px)}
 }
+
+/* v0.14.1 multi-content integration — original Studio drawer and peek preserved */
+.studio-ready .studio-add-content{background:#f3f8fd;border:1px solid #c6ddf0;border-radius:14px;padding:13px;margin:0 0 16px;direction:rtl}
+.studio-ready .studio-add-content>strong{display:block;font-size:15px;margin-bottom:5px;color:#17496e}
+.studio-ready .studio-add-content .muted{margin:4px 0 8px}
+.studio-ready .studio-content-add-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.studio-ready .studio-content-add-buttons button{min-width:0;min-height:46px;padding:9px 5px;font-size:13px;font-weight:750;background:#1b689b;color:#fff}
+.studio-ready .studio-content-items{margin-top:11px;display:flex;flex-direction:column;gap:6px}
+.studio-ready .studio-content-items>strong{font-size:12px;color:#34516e}
+.studio-ready .studio-content-items button{text-align:right;min-height:40px;overflow-wrap:anywhere;white-space:normal}
+@media(max-width:420px){.studio-ready .studio-content-add-buttons{grid-template-columns:1fr 1fr}.studio-ready .studio-content-add-buttons button:last-child{grid-column:1/-1}}
