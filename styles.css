@@ -56,23 +56,12 @@
  .mobile-bottom-nav button>span{font-size:24px;line-height:1.1}.mobile-bottom-nav button small{font-size:11px}
  .mobile-bottom-nav button[aria-expanded=true]{color:#0b4988;background:#e9f3ff}
  .scenes-panel,.editor-panel{display:none!important}
- body.mobile-sheet-open .scenes-panel,body.mobile-sheet-open .editor-panel{display:block!important;position:fixed;top:calc(72px + env(safe-area-inset-top,0px));bottom:calc(72px + env(safe-area-inset-bottom,0px));left:6px;right:6px;width:auto;z-index:90;overflow-y:auto;overscroll-behavior:contain;border:1px solid #c1d5e7;box-shadow:0 15px 45px #0c284755;border-radius:16px;padding:58px 14px 30px;scrollbar-gutter:stable}
- body.mobile-sheet-open:not([data-mobile-view=scenes]) .scenes-panel{display:none!important}
- body.mobile-sheet-open[data-mobile-view=scenes] .editor-panel{display:none!important}
- body.mobile-sheet-open[data-mobile-view=audio] .editor-panel>.nm-ui-edit,
- body.mobile-sheet-open[data-mobile-view=audio] .editor-panel>.nm-ui-design,
- body.mobile-sheet-open[data-mobile-view=edit] .editor-panel>.nm-ui-audio,
- body.mobile-sheet-open[data-mobile-view=edit] .editor-panel>.nm-ui-design,
- body.mobile-sheet-open[data-mobile-view=design] .editor-panel>.nm-ui-edit,
- body.mobile-sheet-open[data-mobile-view=design] .editor-panel>.nm-ui-audio{display:none!important}
  .mobile-sheet-head:not([hidden]){display:flex;align-items:center;justify-content:space-between;position:fixed;top:calc(73px + env(safe-area-inset-top,0px));left:13px;right:13px;z-index:95;background:#f3f8fc;border-bottom:1px solid #c9d9e9;border-radius:12px 12px 0 0;padding:6px 12px;height:46px}
  .mobile-sheet-head button{background:#dceaf5;color:#163e61;min-height:36px;padding:5px 12px}
  .panel label{font-size:14px}.panel input:not([type=range]),.panel textarea,.panel select{min-height:46px;font-size:16px}
  .panel input[type=range]{height:34px}
  .math-tools button,.sticker-palette button{min-height:46px}
  .nm-settings summary{font-size:15px}
- body.mobile-sheet-open:before{content:'';position:fixed;inset:0;background:#13283d65;z-index:80}
- body.mobile-sheet-open{overflow:hidden}
  footer{display:none}
 }
 @media(min-width:761px){.mobile-bottom-nav,.mobile-sheet-head{display:none!important}}
@@ -228,9 +217,6 @@ body.studio-ready{background:#edf2f7;color:#182e46}
  .studio-ready.studio-drawer-open[data-studio-view=scenes] .editor-panel{display:none!important}
  .studio-ready.studio-drawer-open .mobile-sheet-head:not([hidden]){display:flex!important;position:fixed;top:calc(46dvh + 4px);left:12px;right:12px;z-index:101;align-items:center;justify-content:space-between;background:#f6f9fd;border-bottom:1px solid #d3e1ec;border-radius:12px 12px 0 0;padding:5px 12px;height:46px}
  .studio-ready .mobile-sheet-head button{min-height:37px;padding:7px 12px;color:#173b59;background:#e5eff7}
- .studio-ready.studio-drawer-open .preview-panel .stage-wrap canvas{height:min(26dvh,240px)}
- .studio-ready.studio-drawer-open .preview-panel .stage-wrap{max-height:28dvh}
- .studio-ready.studio-drawer-open .preview-panel .studio-scene-label,.studio-ready.studio-drawer-open .preview-panel .timeline,.studio-ready.studio-drawer-open .preview-panel .seek,.studio-ready.studio-drawer-open .preview-panel .toolbar,.studio-ready.studio-drawer-open .preview-panel .actions:not(.studio-actions){display:none!important}
  .studio-ready .visual-editor{padding:7px}
  .studio-ready .panel input:not([type=range]),.studio-ready .panel textarea,.studio-ready .panel select{font-size:16px}
  .studio-ready .panel .nm-question-composer{font-size:18px}
@@ -243,4 +229,49 @@ body.studio-ready{background:#edf2f7;color:#182e46}
  .studio-ready.studio-drawer-open .editor-panel,.studio-ready.studio-drawer-open .scenes-panel{top:26dvh}
  .studio-ready.studio-drawer-open .mobile-sheet-head:not([hidden]){top:calc(26dvh + 4px)}
  .studio-ready .preview-panel .stage-wrap canvas{height:37dvh}
+}
+
+/* v0.14.1 — generator panel, roomier mobile editing drawer, peek mode */
+.auto-reels{border:1px solid #cfe0ee;border-radius:12px;padding:8px 12px 4px;margin:0 0 16px;background:#f5faff}
+.auto-reels>summary{font-weight:800;cursor:pointer;padding:6px 0;color:#174c79}
+.auto-reels[open]>summary{margin-bottom:6px}
+.studio-typography>fieldset{border:0;padding:0;margin:0}
+.studio-typography>fieldset>legend{display:none}
+.studio-ready .preview-sticker-actions button:disabled{display:none}
+.studio-ready .preview-sticker-actions:has(button:disabled:only-child){display:none}
+.sheet-peek-toggle{display:none}
+@media(max-width:760px){
+ .studio-ready .studio-section-header strong{display:none}
+ .studio-ready .studio-section-header{justify-content:flex-end;margin-bottom:8px;padding-bottom:8px}
+ .studio-ready.studio-drawer-open .header,
+ .studio-ready.studio-drawer-open .preview-panel .heading,
+ .studio-ready.studio-drawer-open .preview-panel .studio-actions,
+ .studio-ready.studio-drawer-open .preview-panel .studio-scene-label,
+ .studio-ready.studio-drawer-open .preview-panel .timeline,
+ .studio-ready.studio-drawer-open .preview-panel .seek,
+ .studio-ready.studio-drawer-open .preview-panel .actions:not(.studio-actions),
+ .studio-ready.studio-drawer-open .preview-panel .status,
+ .studio-ready.studio-drawer-open .preview-panel>.muted{display:none!important}
+ .studio-ready.studio-drawer-open .layout{padding:4px 8px}
+ .studio-ready.studio-drawer-open .preview-panel{padding:6px 8px}
+ .studio-ready.studio-drawer-open .preview-panel .stage-wrap{padding:4px}
+ /* Half sheet: canvas keeps ~half the screen, playback controls stay reachable above the sheet. */
+ .studio-ready.studio-drawer-open .preview-panel .stage-wrap canvas{height:calc(50dvh - 92px)}
+ .studio-ready.studio-drawer-open .preview-panel .toolbar{margin-top:4px}
+ .studio-ready.studio-drawer-open .editor-panel,.studio-ready.studio-drawer-open .scenes-panel{top:50dvh}
+ .studio-ready.studio-drawer-open .mobile-sheet-head:not([hidden]){top:calc(50dvh + 4px)}
+ /* Peek: only the sheet header remains; the canvas gets the screen back for direct manipulation. */
+ .studio-ready.studio-drawer-open.studio-drawer-peek .editor-panel,.studio-ready.studio-drawer-open.studio-drawer-peek .scenes-panel{top:calc(100dvh - 75px - 56px - env(safe-area-inset-bottom,0px));overflow:hidden}
+ .studio-ready.studio-drawer-open.studio-drawer-peek .mobile-sheet-head:not([hidden]){top:calc(100dvh - 75px - 52px - env(safe-area-inset-bottom,0px))}
+ .studio-ready.studio-drawer-open.studio-drawer-peek .preview-panel .stage-wrap canvas{height:calc(100dvh - 75px - 56px - 120px)}
+ .studio-ready.studio-drawer-open.studio-drawer-peek .preview-panel .visual-editor:not([hidden]){display:block}
+ /* Peek + object selected on canvas: leave room for the size controls under the canvas. */
+ .studio-ready.studio-drawer-open.studio-drawer-peek.studio-canvas-selection .preview-panel .stage-wrap canvas{height:calc(100dvh - 75px - 56px - 290px)}
+ .sheet-peek-toggle{display:inline-flex;margin-inline-start:auto;margin-inline-end:8px}
+ .studio-ready .mobile-sheet-head strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media(max-width:760px) and (orientation:landscape){
+ .studio-ready.studio-drawer-open .preview-panel .stage-wrap canvas{height:calc(45dvh - 40px)}
+ .studio-ready.studio-drawer-open .editor-panel,.studio-ready.studio-drawer-open .scenes-panel{top:45dvh}
+ .studio-ready.studio-drawer-open .mobile-sheet-head:not([hidden]){top:calc(45dvh + 4px)}
 }

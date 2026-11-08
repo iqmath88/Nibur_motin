@@ -1,4 +1,4 @@
-/* Nibor Motion v0.14.0 Studio workspace.
+/* Nibor Motion v0.14.1 Studio workspace.
  * Presentation only: existing element IDs, listeners, project data and renderer remain intact.
  */
 'use strict';
@@ -15,6 +15,9 @@
  const free=$('freeEditor'); const timeline=$('nmTimelineEditor');
  if(free)editor.append(free);
  if(timeline)editor.append(timeline);
+ // Per-scene text styling is frequent work: keep it in Content, folded so it does not crowd the form.
+ const typo=editor.querySelector(':scope > .typography-panel');
+ if(typo){const fold=document.createElement('details');fold.className='nm-settings studio-typography';const sum=document.createElement('summary');sum.textContent='🅰 تنسيق النصوص ومواضعها — هذا المشهد';typo.replaceWith(fold);fold.append(sum,typo);}
  const children=Array.from(editor.children);
  children.forEach(el=>{
    let section;
@@ -27,7 +30,8 @@
      const input=el.matches('label')?el.getAttribute('for'):null;
      if(el.matches('.audio-panel'))section='audio';
      else if(el.matches('.stickers,.nm-math-studio'))section='elements';
-     else if(el.matches('.typography-panel,.nm-question-advanced'))section='advanced';
+     else if(el.matches('.studio-typography'))section='content';
+     else if(el.matches('.nm-question-advanced'))section='advanced';
      else if(el.matches('.question-math-tools,.nm-question-composer-wrap,.math-tools'))section='content';
      else if(el.matches('.nm-settings')){
        const first=el.querySelector('summary')?.textContent||'';
@@ -35,7 +39,7 @@
      }
      else if(el.matches('fieldset'))section='motion';
      else if(['duration','qAt','eAt','aAt'].includes(id)||input==='duration')section='motion';
-     else if(['title','equation','answer','mathHost'].includes(id)||['title','question','equation','answer'].includes(input))section='content';
+     else if(['title','equation','answer','mathHost'].includes(id)||['title','question','equation','answer','nmQuestionComposer'].includes(input))section='content';
      else if(el.matches('p.muted')&&editor.children.length>0)section='content';
      else section='advanced';
    }
@@ -56,6 +60,15 @@
  const strong=document.createElement('strong');strong.id='studioSectionTitle';actions.append(strong);
  const more=document.createElement('button');more.type='button';more.id='studioAdvanced';more.textContent='⚙ إعدادات متقدمة';more.className='secondary';more.addEventListener('click',()=>setView('advanced'));actions.append(more);
  editor.insertBefore(actions,editor.firstChild);
+ // Desktop: tabs belong under the app header (on phones the bar is fixed at the bottom anyway).
+ document.querySelector('.header')?.after(nav);
+ // Phone sheet: a peek toggle hands the screen back to the canvas for direct manipulation.
+ const peek=document.createElement('button');peek.type='button';peek.className='secondary sheet-peek-toggle';
+ const closeBtn=$('mobileSheetClose');head.insertBefore(peek,closeBtn||null);
+ let autoPeek=false;
+ function setPeek(on){document.body.classList.toggle('studio-drawer-peek',on);peek.textContent=on?'⌃ توسيع':'⌄ تصغير';peek.setAttribute('aria-pressed',String(on));peek.setAttribute('aria-label',on?'توسيع لوحة التحرير':'تصغير لوحة التحرير لتكبير المعاينة');if(!on)autoPeek=false;}
+ peek.addEventListener('click',()=>setPeek(!document.body.classList.contains('studio-drawer-peek')));
+ setPeek(false);
  const buttons=[['content','✎','المحتوى'],['elements','◇','العناصر'],['motion','◷','الحركة'],['audio','♫','الصوت'],['scenes','▦','المشاهد']];
  nav.replaceChildren();
  buttons.forEach(([mode,symbol,label])=>{
@@ -67,6 +80,7 @@
  function setView(next){
    if(!labels[next])return;
    mode=next;
+   setPeek(false);
    document.body.dataset.studioView=mode;
    document.body.classList.toggle('studio-drawer-open',media.matches);
    $('mobileSheetTitle').textContent=labels[mode];
@@ -85,13 +99,20 @@
    if(media.matches){document.activeElement?.blur?.();}
  }
  nav.addEventListener('click',event=>{const b=event.target.closest('[data-mobile-tab]');if(b)setView(b.dataset.mobileTab)});
- $('mobileSheetClose')?.addEventListener('click',()=>document.body.classList.remove('studio-drawer-open'));
+ $('mobileSheetClose')?.addEventListener('click',()=>{document.body.classList.remove('studio-drawer-open');setPeek(false);});
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&media.matches)document.body.classList.remove('studio-drawer-open')});
  media.addEventListener('change',()=>{document.body.classList.remove('studio-drawer-open');head.hidden=!media.matches});
  // Quick access to element-specific properties when selection changes, without disturbing Canvas touch handling.
  const observer=new MutationObserver(()=>{
    const active=($('nmProperties')&&!$('nmProperties').hidden)||($('visualEditor')&&!$('visualEditor').hidden);
    document.body.classList.toggle('studio-selection-active',!!active);
+   // Selecting an object on the canvas (visual editor) while the half sheet is open: shrink the sheet so the object can be dragged comfortably.
+   const onCanvas=$('visualEditor')&&!$('visualEditor').hidden;
+   document.body.classList.toggle('studio-canvas-selection',!!onCanvas);
+   if(media.matches&&document.body.classList.contains('studio-drawer-open')){
+     if(onCanvas&&!document.body.classList.contains('studio-drawer-peek')){setPeek(true);autoPeek=true;}
+     else if(!onCanvas&&autoPeek){setPeek(false);}
+   }
  });
  if($('nmProperties'))observer.observe($('nmProperties'),{attributes:true,attributeFilter:['hidden']});
  if($('visualEditor'))observer.observe($('visualEditor'),{attributes:true,attributeFilter:['hidden']});
