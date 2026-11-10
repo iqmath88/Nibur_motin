@@ -53,7 +53,15 @@
  quick('studioScenes','▦ المشاهد',()=>setView('scenes'),'secondary');
  quick('studioAdd','＋ مشهد',()=>{$('add')?.click();setView('content')},'secondary');
  quick('studioExport','⇩ تصدير الفيديو',()=>{$('export')?.click()},'studio-export');
+ // Studio 0.16: single-entry quick tools, routed to the existing tested editor actions.
+ const insertBar=document.createElement('div');insertBar.className='studio-insert-bar';insertBar.setAttribute('role','toolbar');insertBar.setAttribute('aria-label','إضافة عناصر إلى المشهد');
+ const insert=(label,id)=>{const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent=label;b.addEventListener('click',()=>{setView('elements');$(''+id)?.click();if(id==='nmAddText'||id==='nmAddMath'){$('nmContent')?.focus();if(media.matches)document.body.classList.add('studio-drawer-open');}});insertBar.append(b)};
+ insert('＋ نص','nmAddText');insert('∑ معادلة','nmAddMath');
+ const help=document.createElement('button');help.type='button';help.className='secondary';help.textContent='؟ طريقة العمل';help.setAttribute('aria-expanded','false');insertBar.append(help);
+ const hint=document.createElement('div');hint.className='studio-quick-help';hint.hidden=true;hint.textContent='أضف نصاً أو معادلة، حرّر المحتوى في لوحة العناصر، ثم اسحب العنصر على معاينة الفيديو. استخدم الحركة لتحديد توقيت ظهوره. الحفظ والتصدير من الأدوات الموجودة.';
+ help.addEventListener('click',()=>{hint.hidden=!hint.hidden;help.setAttribute('aria-expanded',String(!hint.hidden))});
  preview.insertBefore(toolbar,preview.firstChild);
+ toolbar.after(insertBar);insertBar.after(hint);
  const strip=document.createElement('div');strip.className='studio-scene-label';strip.textContent='المشاهد · المس المشهد للتبديل';
  const sceneTrack=$('timeline');if(sceneTrack)sceneTrack.parentNode.insertBefore(strip,sceneTrack);
  const actions=document.createElement('div');actions.className='studio-section-header';
@@ -106,6 +114,7 @@
  const observer=new MutationObserver(()=>{
    const active=($('nmProperties')&&!$('nmProperties').hidden)||($('visualEditor')&&!$('visualEditor').hidden);
    document.body.classList.toggle('studio-selection-active',!!active);
+   if(active&&!media.matches&&mode!=='elements'&&mode!=='motion')setView('elements');
    // Selecting an object on the canvas (visual editor) while the half sheet is open: shrink the sheet so the object can be dragged comfortably.
    const onCanvas=$('visualEditor')&&!$('visualEditor').hidden;
    document.body.classList.toggle('studio-canvas-selection',!!onCanvas);

@@ -296,3 +296,10 @@ body.studio-ready{background:#edf2f7;color:#182e46}
 .nm-versions>summary{cursor:pointer;font-weight:700;padding:4px 0}
 .nm-version{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #eef2f5;font-size:13px}
 .nm-version button{min-height:34px;padding:4px 12px}
+
+/* v0.16.0 — accessible quick-insert tools and uncluttered studio */
+.studio-ready .studio-insert-bar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px;align-items:center}
+.studio-ready .studio-insert-bar button{min-height:44px;padding:9px 14px;flex:1;font-weight:700}
+.studio-ready .studio-quick-help{padding:12px 14px;margin:0 0 12px;border:1px solid var(--line,#d9e2eb);border-radius:12px;line-height:1.8;background:var(--surface,#f4f7fa)}
+.studio-ready .studio-quick-help[hidden]{display:none}
+@media(max-width:760px){.studio-ready .studio-insert-bar{gap:5px}.studio-ready .studio-insert-bar button{font-size:12px;padding:8px 5px;min-height:44px}.studio-ready.studio-drawer-open .studio-insert-bar,.studio-ready.studio-drawer-open .studio-quick-help{display:none}}
