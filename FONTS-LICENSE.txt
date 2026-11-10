@@ -1,0 +1,4 @@
+Embedded fonts (SIL Open Font License 1.1):
+- Cairo Bold (700): cairo-arabic-700-normal.woff2, cairo-latin-700-normal.woff2 — see OFL-Cairo.txt
+- Noto Sans Arabic Regular/Bold (400/700): noto-sans-arabic-*-normal.woff2 — see OFL-NotoSansArabic.txt
+Font files are the unmodified Arabic and Latin subsets distributed by Fontsource (@fontsource/cairo, @fontsource/noto-sans-arabic).

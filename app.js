@@ -46,7 +46,7 @@ const answerFormulaColor=s=>['rounded','rectangle'].includes(s.answerBg)?backdro
 let mathDebounce=null;
 function scheduleMathWarm(){clearTimeout(mathDebounce);mathDebounce=setTimeout(()=>{prewarm();trimMathCache()},250)}
 const status=msg=>{$('status').textContent=msg};
-function save(){NM.project=state;rebuildTimeline();NM.freeEditor.track(state,index);try{localStorage.setItem('nibor-motion-v1',JSON.stringify(state))}catch(e){status('تعذر الحفظ على الجهاز. صدّر المشروع JSON للاحتفاظ بنسخة احتياطية.')}}
+function save(){NM.project=state;rebuildTimeline();NM.freeEditor.track(state,index);try{localStorage.setItem('nibor-motion-v1',JSON.stringify(state))}catch(e){status('تعذر الحفظ على الجهاز. احفظ حزمة المشروع (.nibor) للاحتفاظ بنسخة احتياطية.')}try{NM.core?.onSave?.()}catch(e){console.warn(e)}}
 function seconds(){return state.scenes.reduce((a,s)=>a+s.duration,0)}
 function sceneStart(i){return state.scenes.slice(0,i).reduce((a,s)=>a+s.duration,0)}
 function atTime(t){let passed=0;for(let i=0;i<state.scenes.length;i++){let d=state.scenes[i].duration;if(t<passed+d || i===state.scenes.length-1)return {index:i,progress:Math.max(0,Math.min(1,(t-passed)/d))};passed+=d}return {index:0,progress:0}}
@@ -79,7 +79,7 @@ for(const [id,key,out] of [['headerSize','headerSize','headerSizeOut'],['footerS
 $('resetBranding').onclick=()=>{if(playing)return;state.branding=cleanBranding(brandingDefaults);syncBrandingControls();save();renderCurrent();status('تمت استعادة النصوص الافتراضية للرأس والذيل')};
 $('project').oninput=e=>{state.name=e.target.value;save()};$('theme').onchange=e=>{state.theme=e.target.value;save();prewarm();render(1)};
 $('add').onclick=()=>{if(playing)return;state.scenes.push(cleanScene({title:'مشهد جديد',duration:4}));index=state.scenes.length-1;clock=seconds();save();drawControls();render(1)};
-$('remove').onclick=()=>{if(playing)return;if(state.scenes.length===1){status('يجب إبقاء مشهد واحد على الأقل');return}if(!confirm('هل تريد حذف هذا المشهد؟ سيُحذف صوته نهائياً إن وُجد.'))return;const removedId=state.scenes[index].id;voiceBlobs.delete(removedId);deleteSceneAudio(removedId).catch(()=>{});state.scenes.splice(index,1);index=Math.min(index,state.scenes.length-1);clock=sceneStart(index)+state.scenes[index].duration;save();drawControls();render(1)};
+$('remove').onclick=()=>{if(playing)return;if(state.scenes.length===1){status('يجب إبقاء مشهد واحد على الأقل');return}if(!confirm('هل تريد حذف هذا المشهد؟ يمكنك التراجع عن الحذف (↶) ما دامت الصفحة مفتوحة.'))return;const removedId=state.scenes[index].id;voiceBlobs.delete(removedId);state.scenes.splice(index,1);index=Math.min(index,state.scenes.length-1);clock=sceneStart(index)+state.scenes[index].duration;save();drawControls();render(1)};
 $('prev').onclick=()=>{if(playing)return;index=(index-1+state.scenes.length)%state.scenes.length;clock=sceneStart(index)+state.scenes[index].duration;drawControls();render(1)};
 $('next').onclick=()=>{if(playing)return;index=(index+1)%state.scenes.length;clock=sceneStart(index)+state.scenes[index].duration;drawControls();render(1)};
 $('seek').oninput=e=>{if(playing)return;clock=seconds()*Number(e.target.value)/1000;const at=atTime(clock);if(index!==at.index){index=at.index;drawControls()}render(at.progress)};
@@ -149,7 +149,7 @@ async function warmMath(raw,color=formulaColor()){
  const entry={ready:false,img:null,error:null,pending:null};mathCache.set(key,entry);
  trimMathCache();
  entry.pending=(async()=>{try{
-  if(!window.MathJax?.startup?.promise)throw Error('مكتبة MathJax لم تُحمّل؛ تحقق من الإنترنت');
+  if(!window.MathJax?.startup?.promise)throw Error('مكتبة MathJax لم تُحمّل؛ أعد تحميل الصفحة');
   await window.MathJax.startup.promise;
   if(!window.MathJax.tex2svg)throw Error('محرك MathJax SVG غير متاح');
   const svg=mathSVG(raw,color),uri='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
@@ -381,7 +381,7 @@ const wait=ms=>new Promise(res=>setTimeout(res,ms));
 async function runPlayback(){if(playing)return;setBusy(true);const token=++playToken;clock=0;let previous=-1;try{await startPreviewMix();}catch(e){status('تعذّر تشغيل المؤثرات: '+e.message)}if(token!==playToken){stopPreviewMix();setBusy(false);return}const start=performance.now();try{while(token===playToken&&clock<seconds()){clock=Math.min(seconds(),(performance.now()-start)/1000);const at=atTime(Math.min(clock,seconds()-.001));if(at.index!==previous){stopSceneAudio();previous=at.index;index=at.index;drawControls();/* voice scheduled by audiomix */}render(at.progress,{guides:true});await wait(33)}if(token===playToken){clock=seconds();index=state.scenes.length-1;drawControls();render(1)}}finally{stopSceneAudio();stopPreviewMix();setBusy(false)}}
 $('play').onclick=runPlayback;$('stop').onclick=()=>{playToken++;stopSceneAudio();stopPreviewMix();if(exporting){status('جارٍ إلغاء التصدير…');return}setBusy(false);status('تم إيقاف التشغيل')};
 $('png').onclick=async()=>{await NM.fonts.ready(status);const at=atTime(clock);render(at.index===index?at.progress:1,{guides:false});$('stage').toBlob(blob=>{if(blob)download(blob,`${safeFileName()}-v${APP_VERSION}-scene.png`);else status('فشل إنشاء صورة PNG');renderCurrent()},'image/png')};
-async function exportVideo(){
+async function exportVideoRealtime(opts={}){
  if(playing)return;
  setBusy(true);exporting=true;
  const token=++playToken;
@@ -392,7 +392,7 @@ async function exportVideo(){
   await voiceLoadPromise;await NM.fonts.ready(status);await musicLoadPromise;
   if(token!==playToken){cancelled=true;return}
   const missingVoices=state.scenes.map((scene,i)=>({scene,i})).filter(x=>x.scene.speechText.trim()&&!voiceBlobs.has(x.scene.id));
-  if(missingVoices.length){const ids=missingVoices.map(x=>x.i+1).join('، ');if(!confirm('المشاهد '+ids+' فيها نص تعليق بلا ملف صوتي محفوظ، فستظهر في الفيديو بلا صوت (الاستماع التجريبي لا يُضاف للفيديو).\n\nمتابعة التصدير؟')){cancelled=true;return}}
+  if(missingVoices.length&&!opts.skipVoiceConfirm){const ids=missingVoices.map(x=>x.i+1).join('، ');if(!confirm('المشاهد '+ids+' فيها نص تعليق بلا ملف صوتي محفوظ، فستظهر في الفيديو بلا صوت (الاستماع التجريبي لا يُضاف للفيديو).\n\nمتابعة التصدير؟')){cancelled=true;return}}
   if(!canvas.captureStream||!window.MediaRecorder)throw Error('تسجيل Canvas غير مدعوم في هذا المتصفح');
   const formats=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm'];
   const mime=formats.find(v=>MediaRecorder.isTypeSupported(v));if(!mime)throw Error('لا توجد صيغة فيديو مدعومة');
@@ -441,8 +441,57 @@ async function exportVideo(){
   if(cancelled)status('تم إلغاء التصدير');
  }
 }
+// ---- v0.15: frame-accurate export (WebCodecs) with automatic fallback to real-time recording ----
+const EXPORT_FPS=30;
+function confirmMissingVoices(){const missing=state.scenes.map((scene,i)=>({scene,i})).filter(x=>x.scene.speechText.trim()&&!voiceBlobs.has(x.scene.id));if(!missing.length)return true;return confirm('المشاهد '+missing.map(x=>x.i+1).join('، ')+' فيها نص تعليق بلا ملف صوتي محفوظ، فستظهر في الفيديو بلا صوت (الاستماع التجريبي لا يُضاف للفيديو).\n\nمتابعة التصدير؟')}
+async function withWakeLock(fn){let lock=null;try{lock=await navigator.wakeLock?.request('screen')}catch(e){}try{return await fn()}finally{try{await lock?.release()}catch(e){}}}
+async function exportVideoOffline(){
+ // Returns 'done' | 'cancelled' | 'fallback'. Throws only for problems the real-time path would hit too.
+ setBusy(true);exporting=true;const token=++playToken;const cancelledNow=()=>token!==playToken;
+ const before={index,clock};let outcome='fallback';
+ try{
+  await voiceLoadPromise;await NM.fonts.ready(status);await musicLoadPromise;
+  if(cancelledNow())return outcome='cancelled';
+  if(!confirmMissingVoices())return outcome='cancelled';
+  const pending=usedMathPairs().map(([raw,color])=>warmMath(raw,color));
+  await Promise.race([Promise.all(pending),wait(12000)]);
+  if(cancelledNow())return outcome='cancelled';
+  if(usedMathPairs().some(([raw,color])=>!mathCache.get(mathKey(raw,color))?.ready))throw Error('تعذر تجهيز بعض المعادلات، عالجها قبل التصدير');
+  const total=seconds();
+  const needsAudio=!!(state.scenes.some(s=>voiceBlobs.has(s.id))||musicBlob||NM.audiomix.timeline(state,voiceBlobs).events.length);
+  const support=await NM.webExport.probe({width:CW,height:CH,fps:EXPORT_FPS,bitrate:8000000,needsAudio});
+  if(!support.ok){status('التصدير السريع غير متاح ('+support.reason+')؛ سيُستخدم التسجيل المباشر.');return outcome='fallback'}
+  let audioBuffer=null;
+  if(needsAudio){status('جارٍ مزج الصوت…');audioBuffer=await NM.webExport.renderAudio(total,async(ac,dest)=>{const prepared=await NM.audiomix.prepare(ac,state,voiceBlobs,musicBlob);NM.audiomix.startPrepared(ac,dest,state,prepared,0)})}
+  if(cancelledNow())return outcome='cancelled';
+  const started=performance.now();let lastUi=0;
+  const blob=await NM.webExport.run({canvas:$('stage'),fps:EXPORT_FPS,totalSeconds:total,audioBuffer,support,isCancelled:cancelledNow,
+   renderFrame:t=>{clock=t;const at=atTime(Math.min(t,total-0.001));index=at.index;render(at.progress,{guides:false})},
+   onProgress:(done,all)=>{const now=performance.now();if(now-lastUi<250&&done<all)return;lastUi=now;const pct=Math.floor(100*done/all);const el=(now-started)/1000;const left=done>5?Math.max(0,Math.round(el*(all-done)/done)):null;status(`جارٍ التصدير ${pct}٪ — الإطار ${done} من ${all}`+(left!==null?` — متبقٍ نحو ${left} ث`:''));updateSeek()}});
+  const took=(performance.now()-started)/1000;
+  download(blob,`${safeFileName()}-v${APP_VERSION}.mp4`);
+  const voices=state.scenes.filter(s=>voiceBlobs.has(s.id)).length;
+  status(`تم إنشاء MP4 بمعدل ${EXPORT_FPS} إطاراً/ث ثابت`+(audioBuffer?` مع ${voices} تعليق صوتي`+(support.audio.mux==='opus'?' (الصوت بترميز Opus لأن هذا المتصفح لا يدعم ترميز AAC)':''):'')+` خلال ${took.toFixed(1)} ث لفيديو مدته ${total.toFixed(1)} ث.`);
+  return outcome='done';
+ }catch(err){
+  if(err?.cancelled||cancelledNow())return outcome='cancelled';
+  if(/المعادلات/.test(err?.message||'')){status('تعذر التصدير: '+err.message);return outcome='done'}
+  console.warn('offline export failed',err);status('تعذر التصدير السريع ('+(err?.message||err)+')؛ سيُستخدم التسجيل المباشر.');return outcome='fallback';
+ }finally{
+  exporting=false;setBusy(false);index=Math.min(before.index,state.scenes.length-1);clock=before.clock;drawControls();renderCurrent();
+  if(outcome==='cancelled')status('تم إلغاء التصدير');
+ }
+}
+async function exportVideo(){
+ if(playing)return;
+ await withWakeLock(async()=>{
+  const mode=(()=>{try{return localStorage.getItem('nibor-export-mode')||'auto'}catch(e){return 'auto'}})();
+  if(mode!=='realtime'&&NM.webExport?.available()){const r=await exportVideoOffline();if(r!=='fallback')return;await exportVideoRealtime({skipVoiceConfirm:true});return}
+  await exportVideoRealtime();
+ });
+}
 $('export').onclick=exportVideo;
-async function initialize(){await NM.fonts.ready(status);save();index=0;clock=state.scenes[0].duration;drawControls();syncBrandingControls();render(1);prewarm();updateMathStatus();if(!window.MathJax)status('الرياضيات حالياً بنص احتياطي. يتطلب إخراج المعادلات الاتصال بالإنترنت.');}
+async function initialize(){await NM.fonts.ready(status);save();index=0;clock=state.scenes[0].duration;drawControls();syncBrandingControls();render(1);prewarm();updateMathStatus();if(!window.MathJax)status('الرياضيات حالياً بنص احتياطي لأن مكتبة MathJax لم تُحمّل. أعد تحميل الصفحة.');}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 
 // Stickers and drag interactions, coordinates normalized to the 1080x1920 master canvas.
@@ -595,3 +644,31 @@ NM.timelineEditor.init({scene:()=>state.scenes[index],getIndex:()=>index,elapsed
   const s=state.scenes[index];for(const [key,out] of [['qAt','qOut'],['eAt','eOut'],['aAt','aOut']]){$(key).value=s[key];$(out).textContent=s[key]+'%'}
   refreshStickers();renderCurrent();},draw:()=>renderCurrent(),status});
 initialize();voiceLoadPromise=loadSceneVoices().catch(e=>{status('تعذر قراءة ملفات الصوت المحفوظة: '+e.message)});
+
+// ---- v0.15 core API used by project-store.js (project library, .nibor packages, undo/redo) ----
+NM.core={
+ onSave:null,restoring:false,
+ getState:()=>state,
+ busy:()=>playing||exporting,
+ status,
+ voices:()=>new Map(voiceBlobs),
+ music:()=>musicBlob,
+ audioDB:{get:k=>dbAudio('get',k),put:(k,b)=>dbAudio('put',k,b),del:k=>dbAudio('delete',k)},
+ voiceKeyFor:(pid,sid)=>'project:'+pid+':'+sid,
+ musicKeyFor:pid=>'project:'+pid+':music',
+ newId:()=>makeSceneId(),
+ /** A fresh project that keeps the current look (theme, branding, fonts, captions, overlays, audio settings). */
+ blankProject(){return cleanProject({...JSON.parse(JSON.stringify(state)),projectId:makeSceneId(),name:'مشروع جديد',scenes:defaults.map(d=>({...d,id:makeSceneId()}))})},
+ /** Replace state from a snapshot without resetting the scene position (undo/redo, restoring a backup). */
+ restore(snapshot){
+  if(playing||exporting)throw Error('أوقف التشغيل أو التصدير أولاً');
+  const next=cleanProject(typeof snapshot==='string'?JSON.parse(snapshot):snapshot);
+  const sameProject=next.projectId===state.projectId;
+  stopSceneAudio();state=next;index=Math.min(index,state.scenes.length-1);clock=sceneStart(index)+state.scenes[index].duration;selectedStickerId=null;selectedElement=null;
+  voiceLoadPromise=loadSceneVoices().catch(e=>status('تعذر تحميل الأصوات: '+e.message));
+  if(!sameProject)musicLoadPromise=loadMusic().catch(()=>{});
+  NM.core.restoring=true;try{save()}finally{NM.core.restoring=false}
+  drawControls();syncBrandingControls();renderCurrent();prewarm();
+ },
+};
+document.dispatchEvent(new Event('nm:core-ready'));

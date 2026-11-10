@@ -69,47 +69,6 @@
  function setPeek(on){document.body.classList.toggle('studio-drawer-peek',on);peek.textContent=on?'⌃ توسيع':'⌄ تصغير';peek.setAttribute('aria-pressed',String(on));peek.setAttribute('aria-label',on?'توسيع لوحة التحرير':'تصغير لوحة التحرير لتكبير المعاينة');if(!on)autoPeek=false;}
  peek.addEventListener('click',()=>setPeek(!document.body.classList.contains('studio-drawer-peek')));
  setPeek(false);
- // Multi-content controls reuse existing free-editor layers rather than introducing a new renderer.
- // Keep the generator and mobile peek controls from the user's newer v0.14.1 build.
- const addPanel=document.createElement('section');
- addPanel.className='studio-add-content';addPanel.dataset.studioSection='content';
- const addHeading=document.createElement('strong');addHeading.textContent='محتويات إضافية للمشهد';
- const addHelp=document.createElement('p');addHelp.className='muted';
- addHelp.textContent='أضف نصوصاً وتعليقات ومعادلات بعدد ما تحتاجه. كل عنصر مستقل وقابل للتحريك والتعديل.';
- const addRow=document.createElement('div');addRow.className='studio-content-add-buttons';
- [['text','＋ نص إضافي'],['note','＋ تعليق توضيحي'],['math','＋ معادلة إضافية']].forEach(([kind,label])=>{
-   const button=document.createElement('button');button.type='button';button.dataset.studioAdd=kind;button.textContent=label;addRow.append(button);
- });
- const extraList=document.createElement('div');extraList.className='studio-content-items';
- extraList.id='studioContentItems';extraList.setAttribute('aria-live','polite');
- addPanel.append(addHeading,addHelp,addRow,extraList);
- actions.insertAdjacentElement('afterend',addPanel);
- function refreshAdditional(){
-   const list=window.NM?.freeEditor?.getItems?.();
-   if(!list)return;
-   extraList.replaceChildren();
-   if(!list.length){const empty=document.createElement('p');empty.className='muted';empty.textContent='لا توجد نصوص أو تعليقات أو معادلات إضافية بعد.';extraList.append(empty);return;}
-   const heading=document.createElement('strong');heading.textContent='العناصر الإضافية ('+list.length+')';extraList.append(heading);
-   list.forEach(item=>{
-     const button=document.createElement('button');button.type='button';button.className='secondary';
-     button.textContent=(item.type==='math'?'∑ ':'✎ ')+(item.content?.slice(0,65)||'عنصر فارغ');
-     button.addEventListener('click',()=>openExtra(item.id));extraList.append(button);
-   });
- }
- function openExtra(id){
-   setView('elements');window.NM.freeEditor.select(id);
-   const field=$('nmContent');if(field){field.scrollIntoView({block:'nearest'});field.focus({preventScroll:true});}
- }
- addRow.addEventListener('click',event=>{
-   const b=event.target.closest('[data-studio-add]');if(!b)return;
-   const kind=b.dataset.studioAdd;const id=window.NM?.freeEditor?.add?.(kind==='math'?'math':'text',kind==='note'?'note':undefined);
-   if(id){refreshAdditional();openExtra(id);}
- });
- const layers=$('nmLayers');
- if(layers)new MutationObserver(()=>{if(mode==='content')refreshAdditional()}).observe(layers,{childList:true});
- const counter=$('counter');
- if(counter)new MutationObserver(()=>{if(mode==='content')refreshAdditional()}).observe(counter,{childList:true,characterData:true,subtree:true});
-
  const buttons=[['content','✎','المحتوى'],['elements','◇','العناصر'],['motion','◷','الحركة'],['audio','♫','الصوت'],['scenes','▦','المشاهد']];
  nav.replaceChildren();
  buttons.forEach(([mode,symbol,label])=>{
@@ -136,7 +95,7 @@
      // Preserve the intrinsic hidden state of controls managed by their own modules.
      el.classList.toggle('studio-section-inactive',el.dataset.studioSection!==mode);
    });
-   editor.scrollTop=0;scenes.scrollTop=0;if(mode==='content')refreshAdditional();
+   editor.scrollTop=0;scenes.scrollTop=0;
    if(media.matches){document.activeElement?.blur?.();}
  }
  nav.addEventListener('click',event=>{const b=event.target.closest('[data-mobile-tab]');if(b)setView(b.dataset.mobileTab)});
