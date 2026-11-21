@@ -596,7 +596,7 @@ window.NM = window.NM || {};
       if (NM.core.busy()) { msg.textContent = 'أوقف التشغيل أو التصدير أولاً.'; return; }
       const params = {}; for (const [k, i] of Object.entries(inputs)) params[k] = i.value;
       let project; try { project = buildProject(NM.core.getState(), pick.value, params, target.value, unit.value, secs.value, time.value); } catch (e) { msg.textContent = 'تعذر الإنشاء: ' + e.message; return; }
-      if (!confirm('سيُستبدل المشروع الحالي بمشاهد المحاكاة. يمكنك التراجع، أو حفظ نسخة احتياطية أولاً. متابعة؟')) return;
+      if (!confirm('سيُنشأ مشروع جديد بمشاهد المحاكاة، ويبقى المشروع الحالي محفوظاً في «🏠 مشاريعي». متابعة؟')) return;
       try { NM.loadProject(project, 'تم إنشاء مشاهد المحاكاة الستة. راجع الخطوات قبل التصدير.'); msg.textContent = 'تم الإنشاء.'; } catch (e) { msg.textContent = 'تعذر الإنشاء: ' + e.message; }
     };
     box.append(field('نوع المسألة', pick), wrap, el('div', { className: 'actions' }, btn), msg);
