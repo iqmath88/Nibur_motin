@@ -7,6 +7,7 @@
 - `export-webcodecs.js`: التصدير إطاراً بإطار (WebCodecs وmp4-muxer وOfflineAudioContext). للفيديو الطويل: صوت على نوافذ (`audiomix.startPreparedWindow`)، وكتابة تدريجية إلى OPFS، أو أجزاء.
 - `project-store.js`: مكتبة المشاريع والنسخ الاحتياطية وحزمة `.nibor` والتراجع والإعادة.
 - `auto-reels.js`: مولّد الريلز (قوى i، والمعادلة التربيعية، والشرح المخصص).
+- `chalk-reels.js`: ريلز السبورة الطباشيرية: محرك السبورة ومثالا السلم والمرشح المخروطي منقولة من Math-books (`v2/reels`) داخل دالة مغلقة. مشهد فيه `chalk = {reel, seg}` يرسم المقطع `seg`؛ يُفعَّل من «نوع الفيديو» في أمثلة الكتاب. خطوطه `chalk-*.woff2`. لتحديثه من Math-books أعد بناءه من `v2/reels/chalk.js` و`cone.js` و`ladder.js`.
 - `sim-engine.js`: محرك المحاكاة الرياضية (مخروط، وخزان، وصفيحة، وسلم، وظل، ومكعب جليدي). الحقل `sim` في المشهد، والرسم دالة في (المعطيات، والقيمة) فقط.
 - `book-library.js`: يحوّل مثالاً من Math-books إلى مشاهد، ويضيف المحاكاة للأمثلة المرتبطة بنموذج (الجدول `SIMS`).
 - `book-examples.js`: بيانات مولَّدة من مستودع Math-books. **لا تعدّله يدوياً**؛ أعد توليده: `node book-import.cjs <مسار Math-books>`. الأداة `book-import.cjs` لا يحمّلها التطبيق.

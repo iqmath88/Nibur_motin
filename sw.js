@@ -5,6 +5,12 @@ const CACHE = 'nibor-motion-v' + APP_VERSION;
 const ASSETS = [
  "./",
  "./KaTeX_AMS-Regular.woff2",
+ "./chalk-reels.js",
+ "./chalk-ruqaa-700.woff2",
+ "./chalk-ruqaa-400.woff2",
+ "./chalk-caveat-700.woff2",
+ "./chalk-caveat-600.woff2",
+ "./chalk-marhey-500.woff2",
  "./KaTeX_Caligraphic-Bold.woff2",
  "./KaTeX_Caligraphic-Regular.woff2",
  "./KaTeX_Fraktur-Bold.woff2",

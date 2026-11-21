@@ -193,7 +193,7 @@ window.NM = window.NM || {};
       format: 'portrait', chapters: [],
       name: `${reel ? 'ريلز · ' : ''}${book.title} · مثال ${ex.num} ص ${ex.page}${ex.title ? ' — ' + ex.title : ''}`.slice(0, 120),
       theme: 'dark',
-      branding: { ...existing.branding, showHeader: true, showFooter: true, header: `${book.grade} · ${book.title} · [${lesson.num}]`, footer: `مثال ${ex.num} · ص ${ex.page} · Math-books` },
+      branding: { ...existing.branding, showHeader: true, showFooter: true, header: `${book.grade} · ${book.title} · \u2066[${lesson.num}]\u2069`, footer: `مثال ${ex.num} · ص ${ex.page} · \u2066Math-books\u2069` },
       scenes: raw.map((s, i) => ({
         id: `book-${id}-${i + 1}`,
         title: s.title, question: s.question, equation: s.equation, answer: '',
@@ -255,7 +255,7 @@ window.NM = window.NM || {};
       name: `درس · ${book.title} · [${lesson.num}] ${lesson.title}`.slice(0, 120),
       theme: 'dark',
       overlays: { ...(existing.overlays || {}), safeGuide: 'none', progress: true },
-      branding: { ...existing.branding, showHeader: true, showFooter: true, header: `${book.grade} · ${book.title} · [${lesson.num}] ${lesson.title}`, footer: `ص ${lesson.pages} · Math-books` },
+      branding: { ...existing.branding, showHeader: true, showFooter: true, header: `${book.grade} · ${book.title} · \u2066[${lesson.num}]\u2069 ${lesson.title}`, footer: `ص ${lesson.pages} · \u2066Math-books\u2069` },
       scenes: scenes.map((s, i) => ({
         id: `lesson-${id}-${i + 1}`,
         title: s.title, question: s.question, equation: s.equation, answer: '',
@@ -277,7 +277,7 @@ window.NM = window.NM || {};
     const data = NM.bookData;
     const box = el('section', { id: 'nmBookLibrary', className: 'nm-sim-generator' });
     const bookSel = el('select', { id: 'nmBookSelect' }), lessonSel = el('select', { id: 'nmLessonSelect' }), exSel = el('select', { id: 'nmExampleSelect' });
-    const modeSel = el('select', { id: 'nmBookMode' }, el('option', { value: 'reel', textContent: 'ريلز قصير: المعادلات على الشاشة والشرح بصوتك (≈ دقيقة)' }), el('option', { value: 'full', textContent: 'شرح كامل لمثال: كل نصوص الكتاب على الشاشة' }), el('option', { value: 'lesson', textContent: 'درس كامل لليوتيوب (أفقي 16:9): الشرح وكل الأمثلة' }));
+    const modeSel = el('select', { id: 'nmBookMode' }, el('option', { value: 'reel', textContent: 'ريلز قصير: المعادلات على الشاشة والشرح بصوتك (≈ دقيقة)' }), el('option', { value: 'full', textContent: 'شرح كامل لمثال: كل نصوص الكتاب على الشاشة' }), el('option', { value: 'lesson', textContent: 'درس كامل لليوتيوب (أفقي 16:9): الشرح وكل الأمثلة' }), el('option', { value: 'chalk', textContent: '🧑‍🏫 ريلز السبورة الطباشيرية (مثالا 4 و5 · ص 94–95)' }));
     const info = el('p', { className: 'muted', role: 'status' }), btn = el('button', { type: 'button', id: 'nmBookGenerate', textContent: '📚 إنشاء فيديو المثال' });
     for (const b of data.books) bookSel.append(el('option', { value: b.id, textContent: `${b.grade} · ${b.title}` }));
     const book = () => data.books.find(b => b.id === bookSel.value);
@@ -290,6 +290,7 @@ window.NM = window.NM || {};
       if (modeSel.value === 'lesson') { const L = lessonScenes(f.book, f.lesson), secs = L.scenes.reduce((a, s) => a + s.duration, 0); exSel.disabled = true;
         info.textContent = `الدرس كاملاً: ${L.scenes.length} مشهداً و${L.chapters.length - 1} مثالاً، نحو ${Math.round(secs / 60)} دقيقة قبل التسجيل (يطول مع صوتك). أفقي 1920×1080 مع فصول لليوتيوب.`; return; }
       exSel.disabled = false;
+      if (modeSel.value === 'chalk') { const id = NM.chalk?.forKey(key()); info.textContent = id ? NM.chalk.describe(id) : 'ريلز السبورة متاح حالياً لمثالين: السلم (مثال 4 ص 94) والمرشح المخروطي (مثال 5 ص 95). اختر أحدهما.'; return; }
       const full = scenesFor(f.book, f.lesson, f.ex), list = modeSel.value === 'full' ? full : reelScenes(full, f.ex), n = list.length, sim = SIMS[key()];
       const secs = Math.round(list.reduce((a, s) => a + s.duration, 0));
       info.textContent = `${n} مشهداً · نحو ${secs} ث قبل التسجيل${sim ? ' · مع محاكاة: ' + NM.sim.MODELS[sim.model].label + (sim.note ? ' — ' + sim.note : '') : ''}. النص والمعادلات من الكتاب كما في Math-books؛ راجعها قبل النشر.`;
@@ -303,7 +304,8 @@ window.NM = window.NM || {};
     btn.onclick = () => {
       if (!NM.core || !NM.loadProject) { info.textContent = 'المحرر غير جاهز بعد.'; return; }
       if (NM.core.busy()) { info.textContent = 'أوقف التشغيل أو التصدير أولاً.'; return; }
-      let project; try { project = modeSel.value === 'lesson' ? buildLesson(NM.core.getState(), `${bookSel.value}/${lessonSel.value}`) : buildProject(NM.core.getState(), key(), modeSel.value); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; return; }
+      if (modeSel.value === 'chalk' && !NM.chalk?.forKey(key())) { info.textContent = 'ريلز السبورة متاح حالياً لمثالي السلم (4 ص 94) والمرشح المخروطي (5 ص 95).'; return; }
+      let project; try { project = modeSel.value === 'chalk' ? NM.chalk.build(NM.core.getState(), NM.chalk.forKey(key())) : modeSel.value === 'lesson' ? buildLesson(NM.core.getState(), `${bookSel.value}/${lessonSel.value}`) : buildProject(NM.core.getState(), key(), modeSel.value); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; return; }
       if (!confirm('سيُنشأ مشروع جديد لهذا المثال، ويبقى المشروع الحالي محفوظاً في «🏠 مشاريعي». متابعة؟')) return;
       try { NM.loadProject(project, `تم إنشاء ${project.scenes.length} مشهداً من الكتاب. راجع المعادلات قبل التصدير.`); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; }
     };
