@@ -36,6 +36,7 @@ const ASSETS = [
  "./book-library.js",
  "./voice-booth.js",
  "./eqmorph.js",
+ "./quick-path.js",
  "./export-webcodecs.js",
  "./fflate.min.js",
  "./fonts.js",

@@ -327,3 +327,17 @@ body.studio-ready{background:#edf2f7;color:#182e46}
 .nm-booth-big{font-size:22px;min-height:72px!important;background:#d6334a;color:#fff;border:0;border-radius:16px}
 .nm-booth-msg{color:#b9cfe0;margin:0;line-height:1.6}
 @media (orientation:portrait){.nm-booth-body{flex-direction:column}.nm-booth-preview{height:34vh}.nm-booth-prompt{min-height:90px}}
+
+/* v0.23.0 quick path + simple mode */
+.nm-quick-path{display:flex;flex-direction:column;gap:14px}
+.nm-qp-intro{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.nm-qp-intro strong{font-size:17px}
+.nm-qp-step{border:1px solid rgba(120,145,165,.35);border-radius:16px;padding:12px 14px;background:rgba(127,160,190,.06)}
+.nm-qp-step header{display:flex;align-items:center;gap:10px}.nm-qp-step h3{margin:0;font-size:17px}
+.nm-qp-badge{flex:0 0 34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:#2f6f86;color:#fff}
+.nm-qp-step.done .nm-qp-badge{background:#2fa37a}
+.nm-qp-step .muted{margin:6px 0 10px}
+.nm-qp-status{margin:8px 0 0;font-size:14px;color:#2f6f86}.nm-qp-step.done .nm-qp-status{color:#2fa37a}
+.nm-qp-main{min-height:52px;font-size:17px;width:100%}
+.nm-qp-step .actions{display:flex;gap:10px}.nm-qp-step .actions .nm-qp-main{flex:2}.nm-qp-step .actions .secondary{flex:1;min-height:52px}
+.nm-qp-body .nm-sim-generator{border-top:0;margin-top:0;padding-top:0}
+body.nm-simple [data-mobile-tab=elements],body.nm-simple [data-mobile-tab=motion],body.nm-simple .studio-insert-bar,body.nm-simple .studio-quick-help,body.nm-simple #studioAdvanced{display:none!important}
