@@ -395,6 +395,30 @@ window.NM = window.NM || {};
   };
 
 
+  /** Screen point the camera moves toward for each model (same geometry as its draw()). */
+  const FOCUS = {
+    cone: (p, h) => { const s = Math.min(450 / p.H, 300 / p.R), tip = 1235; return [540, tip - h * s * .55]; },
+    tank: (p, h) => { const k = 300 / Math.max(p.s, p.Ht); return [540, 1060 - h * k]; },
+    plate: (p, x, sim) => { const ext = sim.extent, s = Math.min(820 / ext, 520 / (p.A / (ext * .4))); return [540 + x * s / 2 - 60, 1170 - (p.A / x) * s / 2]; },
+    ladder: (p, x) => [190 + x * 540 / p.L * .75, 1170 - 120],
+    shadow: (p, x, sim) => { const k = p.hp / (p.H - p.hp), s = Math.min(480 / p.H, 800 / (sim.extent * (1 + k))); return [140 + x * (1 + k * .5) * s, 1165 - p.hp * s * .6]; },
+    cube: (p, x, sim) => { const Lmax = p.a + 2 * sim.extent, s = 275 / Lmax; return [540 + (p.a / 2 + x) * .866 * s, 960 + (p.a / 2 + x) * .5 * s]; }
+  };
+  const CAMERAS = ['none', 'push', 'reveal', 'in', 'hold', 'out'], ZOOM = 1.16;
+  const camEase = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  /** Zoom at progress p for a camera move; continuous chains are built by the generators (in → hold → out). */
+  function zoomAt(cam, p) {
+    const k = camEase(Math.max(0, Math.min(1, p)));
+    switch (cam) { case 'push': return 1 + .05 * k; case 'reveal': return 1.08 - .08 * k; case 'in': return 1 + (ZOOM - 1) * k; case 'hold': return ZOOM; case 'out': return ZOOM - (ZOOM - 1) * k; default: return 1; }
+  }
+  /** Camera chain for a generated sequence: reveal the setup, zoom in at the substitution, hold, pull back at the end. */
+  function cameraChain(count, hold) {
+    const cams = Array(count).fill('none'); if (!count) return cams;
+    cams[0] = 'reveal';
+    if (hold > 0 && hold < count) { cams[hold] = 'in'; for (let i = hold + 1; i < count - 1; i++) cams[i] = 'hold'; if (count - 1 > hold) cams[count - 1] = 'out'; }
+    return cams;
+  }
+
   function cleanParams(model, raw) {
     const m = MODELS[model], p = {};
     if (m.legacy) raw = m.legacy(raw);
@@ -420,7 +444,8 @@ window.NM = window.NM || {};
       ease: EASES.includes(x.ease) ? x.ease : 'physical',
       readout: x.readout !== false,
       unit: UNITS.includes(x.unit) ? x.unit : 'cm',
-      time: TIMES.includes(x.time) ? x.time : 's'
+      time: TIMES.includes(x.time) ? x.time : 's',
+      camera: CAMERAS.includes(x.camera) ? x.camera : 'none'
     };
   }
 
@@ -445,7 +470,21 @@ window.NM = window.NM || {};
     const sim = scene?.sim; if (!sim?.model || !MODELS[sim.model]) return false;
     const pal = palette(opts.dark !== false), value = valueAt(sim, p);
     c.save();
-    try { MODELS[sim.model].draw(c, sim.params, value, pal, sim, p); if (sim.readout) readout(c, sim, value, pal); }
+    try {
+      const z = zoomAt(sim.camera, p);
+      if (Math.abs(z - 1) > 1e-4) {
+        // Camera: scale about the model's focus point and drift it toward the stage centre; clip to the stage band.
+        const f = (FOCUS[sim.model] || (() => [540, 940]))(sim.params, value, sim), C = [540, 930];
+        // Scale about the focus point (kept away from the frame edges), so the whole model stays mostly in view.
+        const focal = ['push', 'reveal'].includes(sim.camera) ? C : [Math.max(330, Math.min(750, f[0])), Math.max(760, Math.min(1120, f[1]))];
+        const tx = focal[0], ty = focal[1];
+        c.beginPath(); c.rect(0, 540, 1080, 725); c.clip();
+        c.translate(tx, ty); c.scale(z, z); c.translate(-focal[0], -focal[1]);
+      }
+      MODELS[sim.model].draw(c, sim.params, value, pal, sim, p);
+    } finally { c.restore(); }
+    c.save();
+    try { if (sim.readout) readout(c, sim, value, pal); }
     finally { c.restore(); }
     return true;
   }
@@ -471,6 +510,7 @@ window.NM = window.NM || {};
     const steps = m.script(params, t, u, T), dur = num(secondsPerScene, 4, 30, 9);
     let hold = steps.findIndex(st => /التعويض/.test(st.title)); if (hold < 0) hold = steps.length - 2;
     const { stops, extent } = approach(m, params, t, steps.length, hold);
+    const cams = cameraChain(steps.length, hold);
     const existing = JSON.parse(JSON.stringify(base)), id = Date.now().toString(36);
     return {
       ...existing,
@@ -480,11 +520,11 @@ window.NM = window.NM || {};
       branding: { ...existing.branding, header: existing.branding?.header || 'المعدلات المرتبطة بالزمن', footer: existing.branding?.footer || 'Nibor Motion' },
       scenes: steps.map((st, i) => ({
         id: `sim-${id}-${i + 1}`,
-        sim: { model, params, from: stops[i], to: stops[i + 1], extent, ease: 'physical', readout: true, unit: u, time: T },
+        sim: { model, params, from: stops[i], to: stops[i + 1], extent, ease: 'physical', readout: true, unit: u, time: T, camera: cams[i] },
         title: st.title, question: st.question, equation: st.equation, answer: '', speechText: st.speech,
         duration: dur, qAt: 8, eAt: 40, aAt: 80,
         titleY: 19, questionY: 29, equationY: 79, titleSize: 55, questionSize: 38, equationScale: 112,
-        titleBg: 'none', questionBg: 'none', equationAnim: 'morph', equationAnimDuration: 30
+        titleBg: 'none', questionBg: 'none', equationAnim: 'morph', equationAnimDuration: 30, transition: 'slide'
       }))
     };
   }
@@ -517,16 +557,17 @@ window.NM = window.NM || {};
     grid.append(field(`${m.vLabel} — بداية المشهد`, from), field(`${m.vLabel} — نهاية المشهد`, to), field('أكبر قيمة يتسع لها الرسم', extent));
     const ease = el('select'); for (const [k, t] of [['physical', 'فيزيائية (معدل ثابت)'], ['linear', 'خطية'], ['smooth', 'ناعمة']]) ease.append(el('option', { value: k, textContent: t })); ease.value = sim.ease;
     const unit = unitSelect(sim.unit), time = timeSelect(sim.time), show = el('input', { type: 'checkbox', checked: sim.readout });
-    grid.append(field('نوع الحركة', ease), field('وحدة الطول', unit), field('وحدة الزمن', time), field('لوحة القيم اللحظية', show));
+    const cam = el('select'); for (const [k, t] of [['none', 'ثابتة'], ['push', 'اقتراب خفيف'], ['reveal', 'كشف (ابتعاد خفيف)'], ['in', 'اقتراب نحو المتغير'], ['hold', 'تبقى مقرّبة'], ['out', 'ابتعاد إلى المشهد كاملاً']]) cam.append(el('option', { value: k, textContent: t })); cam.value = sim.camera || 'none';
+    grid.append(field('نوع الحركة', ease), field('وحدة الطول', unit), field('وحدة الزمن', time), field('الكاميرا', cam), field('لوحة القيم اللحظية', show));
     host.append(grid);
     const hint = el('p', { className: 'muted' });
     const update = () => {
       const params = {}; for (const f of m.params) params[f.key] = inputs[f.key].value;
-      commit({ model: sim.model, params, from: from.value, to: to.value, extent: extent.value, ease: ease.value, unit: unit.value, time: time.value, readout: show.checked });
+      commit({ model: sim.model, params, from: from.value, to: to.value, extent: extent.value, ease: ease.value, unit: unit.value, time: time.value, camera: cam.value, readout: show.checked });
       const s = scene.sim; hint.textContent = s.from === s.to ? `المشهد يثبت عند ${m.v} = ${fmt(s.from)}، مناسب لمشهد التعويض.` : `${m.v} يتغير من ${fmt(s.from)} إلى ${fmt(s.to)} خلال المشهد.`;
     };
     for (const i of [...Object.values(inputs), from, to, extent]) { i.onchange = update; i.disabled = busy; }
-    for (const i of [ease, unit, time, show]) { i.onchange = update; i.disabled = busy; }
+    for (const i of [ease, unit, time, cam, show]) { i.onchange = update; i.disabled = busy; }
     const hold = el('button', { type: 'button', className: 'secondary', textContent: 'تثبيت القيمة طوال المشهد' });
     hold.onclick = () => { to.value = from.value; update(); };
     host.append(el('div', { className: 'actions' }, hold), hint);
@@ -569,5 +610,5 @@ window.NM = window.NM || {};
   }
   function refresh() { const host = document.getElementById('nmSimBody'); if (host && bridge) sceneEditor(host); }
 
-  NM.sim = { MODELS, clean, draw, valueAt, buildProject, approach, legacyCone, init, refresh, _tex: { frac, piFrac, overPi, sqrtTex } };
+  NM.sim = { MODELS, clean, draw, valueAt, buildProject, approach, cameraChain, zoomAt, legacyCone, init, refresh, _tex: { frac, piFrac, overPi, sqrtTex } };
 })(window.NM);
