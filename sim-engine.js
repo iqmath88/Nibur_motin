@@ -469,6 +469,12 @@ window.NM = window.NM || {};
   function draw(c, scene, p, opts = {}) {
     const sim = scene?.sim; if (!sim?.model || !MODELS[sim.model]) return false;
     const pal = palette(opts.dark !== false), value = valueAt(sim, p);
+    // Landscape (16:9): the portrait drawing (designed on 1080×1920) is placed in the left column.
+    const L = opts.landscape ? [.86, 0, 0, .86, 500 - 540 * .86, 585 - 1000 * .86] : null;
+    if (L) { c.save(); c.transform(...L); }
+    try { return drawPortrait(c, sim, p, pal, value); } finally { if (L) c.restore(); }
+  }
+  function drawPortrait(c, sim, p, pal, value) {
     c.save();
     try {
       const z = zoomAt(sim.camera, p);
@@ -514,7 +520,7 @@ window.NM = window.NM || {};
     const existing = JSON.parse(JSON.stringify(base)), id = Date.now().toString(36);
     return {
       ...existing,
-      projectId: 'sim-' + id,
+      projectId: 'sim-' + id, format: 'portrait', chapters: [],
       name: `المعدلات المرتبطة — ${m.label}`,
       theme: 'dark',
       branding: { ...existing.branding, header: existing.branding?.header || 'المعدلات المرتبطة بالزمن', footer: existing.branding?.footer || 'Nibor Motion' },

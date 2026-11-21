@@ -13,7 +13,20 @@ window.NM=window.NM||{};
  function startPrepared(ctx,destination,project,prepared,startAt){const {buffers,music,tl}=prepared;const sources=[];for(const item of tl.voiceIntervals){const src=ctx.createBufferSource();src.buffer=buffers.get(item.id);const gain=ctx.createGain();gain.gain.value=item.volume;src.connect(gain).connect(destination);src.start(startAt+item.start,0,Math.min(src.buffer.duration,item.end-item.start));sources.push(src)}
  if(music&&music.duration>0){const gain=ctx.createGain();gain.connect(destination);let cursor=0;while(cursor<tl.total){const src=ctx.createBufferSource();src.buffer=music;src.connect(gain);const length=Math.min(music.duration,tl.total-cursor);src.start(startAt+cursor,0,length);sources.push(src);cursor+=length}const base=project.audio.musicVolume;gain.gain.setValueAtTime(.0001,startAt);gain.gain.linearRampToValueAtTime(Math.max(.0001,base),startAt+Math.min(1,tl.total/3));for(const v of tl.voiceIntervals){gain.gain.setTargetAtTime(Math.max(.0001,base*.25),startAt+v.start,.15);gain.gain.setTargetAtTime(Math.max(.0001,base),startAt+v.end,.15)}gain.gain.setTargetAtTime(.0001,startAt+Math.max(0,tl.total-1),.2)}
  for(const e of tl.events)playEffect(ctx,destination,e.type,startAt+e.at);return {sources,timeline:tl}}
+ /** v0.25: render only [from, to) of the mix into ctx (time 0 = from). Long lessons are mixed window by window,
+  *  so memory stays bounded (a 60-minute stereo buffer would be ~1.4 GB). Sources start mid-buffer with exact offsets. */
+ function startPreparedWindow(ctx,destination,project,prepared,from,to){const {buffers,music,tl}=prepared,span=to-from,sources=[];
+  for(const item of tl.voiceIntervals){const buf=buffers.get(item.id);if(!buf||item.end<=from||item.start>=to)continue;const when=Math.max(0,item.start-from),off=Math.max(0,from-item.start),len=Math.min(buf.duration-off,item.end-item.start-off,span-when);if(len<=0)continue;const src=ctx.createBufferSource();src.buffer=buf;const g=ctx.createGain();g.gain.value=item.volume;src.connect(g).connect(destination);src.start(when,off,len);sources.push(src)}
+  if(music&&music.duration>0){const gain=ctx.createGain();gain.connect(destination);const base=Math.max(.0001,project.audio.musicVolume),fadeIn=Math.min(1,tl.total/3);
+   const level=t=>{let v=base;if(t<fadeIn)v=Math.max(.0001,base*t/fadeIn);if(tl.voiceIntervals.some(x=>t>=x.start&&t<x.end))v=Math.max(.0001,base*.25);if(t>tl.total-1)v=Math.max(.0001,v*Math.max(0,tl.total-t));return v};
+   gain.gain.setValueAtTime(level(from),0);
+   if(from<fadeIn)gain.gain.linearRampToValueAtTime(base,Math.min(span,fadeIn-from));
+   for(const v of tl.voiceIntervals){if(v.start>from&&v.start<to)gain.gain.setTargetAtTime(Math.max(.0001,base*.25),v.start-from,.15);if(v.end>from&&v.end<to)gain.gain.setTargetAtTime(base,v.end-from,.15)}
+   if(tl.total-1<to)gain.gain.setTargetAtTime(.0001,Math.max(0,tl.total-1-from),.2);
+   let cursor=0;while(cursor<tl.total){const length=Math.min(music.duration,tl.total-cursor);if(cursor+length>from&&cursor<to){const when=Math.max(0,cursor-from),off=Math.max(0,from-cursor),len=Math.min(length-off,span-when);if(len>0){const src=ctx.createBufferSource();src.buffer=music;src.connect(gain);src.start(when,off,len);sources.push(src)}}cursor+=length}}
+  for(const e of tl.events)if(e.at>=from&&e.at<to)playEffect(ctx,destination,e.type,e.at-from);
+  return {sources,timeline:tl}}
  async function schedule(ctx,destination,project,voices,musicBlob,startAt){const prepared=await prepare(ctx,project,voices,musicBlob);return startPrepared(ctx,destination,project,prepared,Math.max(ctx.currentTime+.12,startAt))}
 
- NM.audiomix={settings,effect,timeline,prepare,startPrepared,schedule,playEffect};
+ NM.audiomix={startPreparedWindow,settings,effect,timeline,prepare,startPrepared,schedule,playEffect};
 })(window.NM);

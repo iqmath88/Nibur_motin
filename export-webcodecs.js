@@ -79,66 +79,101 @@ window.NM = window.NM || {};
     return ctx.startRendering();
   }
 
+  /** Disk-backed output (Origin Private File System) so a long lesson does not have to fit in memory. */
+  async function openDiskTarget(name) {
+    try {
+      if (!navigator.storage?.getDirectory) return null;
+      const dir = await navigator.storage.getDirectory();
+      const handle = await dir.getFileHandle(name, { create: true });
+      if (typeof handle.createWritable !== "function") return null;
+      const writable = await handle.createWritable();
+      let chain = Promise.resolve(), pending = 0, error = null;
+      const write = (data, position) => {
+        pending += data.byteLength;
+        const copy = data.slice ? data.slice() : new Uint8Array(data);
+        chain = chain.then(() => writable.write({ type: "write", position, data: copy })).then(() => { pending -= copy.byteLength; }, (e) => { error = error || e; });
+      };
+      return {
+        write,
+        backlog: () => pending,
+        settle: async () => { await chain; if (error) throw error; },
+        finish: async () => { await chain; if (error) throw error; await writable.close(); return handle.getFile(); },
+        abort: async () => { try { await chain; await writable.abort?.(); } catch (e) {} try { await dir.removeEntry(name); } catch (e) {} },
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+  async function diskAvailable() {
+    const t = await openDiskTarget("nm-probe.tmp");
+    if (!t) return false;
+    try { t.write(new Uint8Array([1]), 0); await t.finish(); } catch (e) { return false; } finally { try { (await navigator.storage.getDirectory()).removeEntry("nm-probe.tmp"); } catch (e) {} }
+    return true;
+  }
+
   /**
+   * Encode [startTime, startTime + totalSeconds) of the project into one MP4.
    * @param {object} o
    * @param {HTMLCanvasElement} o.canvas
    * @param {number} o.fps
-   * @param {number} o.totalSeconds
-   * @param {(t:number)=>void} o.renderFrame  draws the frame for time t (seconds) on the canvas
-   * @param {AudioBuffer|null} o.audioBuffer
-   * @param {{video:VideoEncoderConfig, audio:?{config:AudioEncoderConfig,mux:string}}} o.support from probe()
-   * @param {(done:number,total:number)=>void} [o.onProgress]
-   * @param {()=>boolean} [o.isCancelled]
-   * @returns {Promise<Blob>} MP4
+   * @param {number} [o.startTime=0] absolute time of the first frame (parts of a long lesson)
+   * @param {number} o.totalSeconds  duration of this file
+   * @param {(t:number)=>void} o.renderFrame  draws the frame for absolute time t (seconds)
+   * @param {AudioBuffer|null} [o.audioBuffer] whole mix (short videos)
+   * @param {(from:number,to:number)=>Promise<AudioBuffer|null>} [o.audioWindow] mix of [from,to) (long videos)
+   * @param {boolean} [o.disk] stream to disk instead of memory
+   * @returns {Promise<Blob>} MP4 (a File backed by disk when o.disk)
    */
   async function run(o) {
-    const { canvas, fps, totalSeconds, renderFrame, audioBuffer, support } = o;
+    const { canvas, fps, totalSeconds, renderFrame, support } = o;
+    const startTime = o.startTime || 0;
     const isCancelled = o.isCancelled || (() => false);
     const frames = Math.max(1, Math.round(totalSeconds * fps));
     const frameUs = 1e6 / fps;
-    const useAudio = !!(audioBuffer && support.audio);
-    const target = new Mp4Muxer.ArrayBufferTarget();
+    const useAudio = !!((o.audioBuffer || o.audioWindow) && support.audio);
+    const disk = o.disk ? await openDiskTarget("nm-export-" + Date.now() + ".mp4") : null;
+    if (o.disk && !disk) throw Error("الكتابة إلى التخزين غير متاحة");
+    const target = disk ? new Mp4Muxer.StreamTarget({ onData: (data, position) => disk.write(data, position), chunked: true, chunkSize: 4 * 1024 * 1024 }) : new Mp4Muxer.ArrayBufferTarget();
     const muxer = new Mp4Muxer.Muxer({
       target,
-      fastStart: "in-memory",
+      fastStart: disk ? false : "in-memory",
       firstTimestampBehavior: "offset",
       video: { codec: "avc", width: canvas.width, height: canvas.height, frameRate: fps },
-      ...(useAudio
-        ? { audio: { codec: support.audio.mux, numberOfChannels: audioBuffer.numberOfChannels, sampleRate: audioBuffer.sampleRate } }
-        : {}),
+      ...(useAudio ? { audio: { codec: support.audio.mux, numberOfChannels: 2, sampleRate: AUDIO_RATE } } : {}),
     });
     let failure = null;
-    const fail = (e) => {
-      failure = failure || e || Error("خطأ في الترميز");
-    };
+    const fail = (e) => { failure = failure || e || Error("خطأ في الترميز"); };
     const venc = new VideoEncoder({ output: (chunk, meta) => muxer.addVideoChunk(chunk, meta), error: fail });
     venc.configure(support.video);
-    let aenc = null;
+    let aenc = null, ok = false;
+    const encodeBuffer = (buf, offsetSeconds) => {
+      const ch = buf.numberOfChannels, len = buf.length, rate = buf.sampleRate, block = Math.round(rate / 10);
+      const planes = Array.from({ length: 2 }, (_, c) => buf.getChannelData(Math.min(c, ch - 1)));
+      for (let start = 0; start < len; start += block) {
+        const n = Math.min(block, len - start), data = new Float32Array(n * 2);
+        for (let c = 0; c < 2; c++) data.set(planes[c].subarray(start, start + n), c * n);
+        const ad = new AudioData({ format: "f32-planar", sampleRate: rate, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(offsetSeconds * 1e6 + (start * 1e6) / rate), data });
+        aenc.encode(ad); ad.close();
+        if (failure) throw failure;
+      }
+    };
     try {
-      // ---- audio: encode the pre-rendered mix in 0.1 s blocks ----
+      // ---- audio: whole mix, or window by window (bounded memory) ----
       if (useAudio) {
         aenc = new AudioEncoder({ output: (chunk, meta) => muxer.addAudioChunk(chunk, meta), error: fail });
-        aenc.configure({ ...support.audio.config, numberOfChannels: audioBuffer.numberOfChannels, sampleRate: audioBuffer.sampleRate });
-        const ch = audioBuffer.numberOfChannels,
-          len = audioBuffer.length,
-          rate = audioBuffer.sampleRate,
-          block = Math.round(rate / 10);
-        const planes = Array.from({ length: ch }, (_, c) => audioBuffer.getChannelData(c));
-        for (let start = 0; start < len; start += block) {
-          const n = Math.min(block, len - start);
-          const data = new Float32Array(n * ch);
-          for (let c = 0; c < ch; c++) data.set(planes[c].subarray(start, start + n), c * n);
-          const ad = new AudioData({
-            format: "f32-planar",
-            sampleRate: rate,
-            numberOfFrames: n,
-            numberOfChannels: ch,
-            timestamp: Math.round((start * 1e6) / rate),
-            data,
-          });
-          aenc.encode(ad);
-          ad.close();
-          if (failure) throw failure;
+        aenc.configure({ ...support.audio.config, numberOfChannels: 2, sampleRate: AUDIO_RATE });
+        if (o.audioBuffer) encodeBuffer(o.audioBuffer, 0);
+        else {
+          const W = 30;
+          for (let from = 0; from < totalSeconds; from += W) {
+            if (isCancelled()) throw Object.assign(Error("cancelled"), { cancelled: true });
+            const to = Math.min(totalSeconds, from + W);
+            const buf = await o.audioWindow(startTime + from, startTime + to);
+            if (buf) encodeBuffer(buf, from);
+            o.onAudioProgress?.(to, totalSeconds);
+            while (aenc.encodeQueueSize > 8) await yieldNow();
+            if (disk && disk.backlog() > 24e6) await disk.settle();
+          }
         }
         await aenc.flush();
       }
@@ -147,11 +182,12 @@ window.NM = window.NM || {};
       for (let f = 0; f < frames; f++) {
         if (isCancelled()) throw Object.assign(Error("cancelled"), { cancelled: true });
         if (failure) throw failure;
-        renderFrame(f / fps);
+        renderFrame(startTime + f / fps);
         const frame = new VideoFrame(canvas, { timestamp: Math.round(f * frameUs), duration: Math.round(frameUs) });
         venc.encode(frame, { keyFrame: f % keyEvery === 0 });
         frame.close();
         while (venc.encodeQueueSize > 4) await yieldNow();
+        if (disk && disk.backlog() > 24e6) await disk.settle();
         if (f % 3 === 0) {
           o.onProgress?.(f + 1, frames);
           await yieldNow();
@@ -161,16 +197,15 @@ window.NM = window.NM || {};
       if (failure) throw failure;
       muxer.finalize();
       o.onProgress?.(frames, frames);
+      ok = true;
+      if (disk) return await disk.finish();
       return new Blob([target.buffer], { type: "video/mp4" });
     } finally {
-      try {
-        if (venc.state !== "closed") venc.close();
-      } catch (e) {}
-      try {
-        if (aenc && aenc.state !== "closed") aenc.close();
-      } catch (e) {}
+      try { if (venc.state !== "closed") venc.close(); } catch (e) {}
+      try { if (aenc && aenc.state !== "closed") aenc.close(); } catch (e) {}
+      if (disk && !ok) await disk.abort();
     }
   }
 
-  NM.webExport = { available, probe, renderAudio, run, AUDIO_RATE };
+  NM.webExport = { available, probe, renderAudio, run, diskAvailable, AUDIO_RATE };
 })(window.NM);

@@ -23,12 +23,17 @@ function makeSceneId(){return (crypto.randomUUID?.()||'scene-'+Date.now()+'-'+Ma
 const cleanScene=s=>({ ...NM.mathanim.settings(s), ...NM.overlays.scene(s), resultEffect:NM.audiomix.effect(s?.resultEffect),voiceDuration:bounded(s?.voiceDuration,0,120,0), id:String(s?.id||makeSceneId()),speechText:String(s?.speechText??'').slice(0,4000),speechRate:bounded(s?.speechRate,.7,1.3,1),ttsVoice:String(s?.ttsVoice||'marin'),autoDuration:s?.autoDuration!==false,voiceVolume:bounded(s?.voiceVolume,0,1,1),stickers:Array.isArray(s?.stickers)?s.stickers.slice(0,40).map(cleanSticker):[],elements:NM.freeEditor.clean(s?.elements),mathStudio:NM.mathStudio.clean(s?.mathStudio),coneStage:NM.coneCinematic?.stageOf(s)||0,transition:['fade','slide'].includes(s?.transition)?s.transition:'fade',sim:NM.sim?NM.sim.clean(s?.sim,s):{model:''},title:String(s?.title??''),question:String(s?.question??''),equation:String(s?.equation??''),answer:String(s?.answer??''),duration:bounded(s?.duration,1,MAX_SCENE_DURATION,4),titleSize:bounded(s?.titleSize,30,100,57),questionSize:bounded(s?.questionSize,30,90,46),equationScale:bounded(s?.equationScale,60,150,100),answerScale:bounded(s?.answerScale,60,150,100),titleBg:TYPE_STYLES.includes(s?.titleBg)?s.titleBg:'rounded',questionBg:TYPE_STYLES.includes(s?.questionBg)?s.questionBg:'none',answerBg:TYPE_STYLES.includes(s?.answerBg)?s.answerBg:'rounded',titleBgColor:cleanColor(s?.titleBgColor,'#f4d96c'),questionBgColor:cleanColor(s?.questionBgColor,'#cfe7fa'),answerBgColor:cleanColor(s?.answerBgColor,'#e3efda'),titleX:bounded(s?.titleX,12,88,50),questionX:bounded(s?.questionX,12,88,50),equationX:bounded(s?.equationX,12,88,50),answerX:bounded(s?.answerX,12,88,50),titleY:bounded(s?.titleY,17,47,32.5),questionY:bounded(s?.questionY,28,68,44.3),equationY:bounded(s?.equationY,40,79,57.6),answerY:bounded(s?.answerY,55,90,72.1),qAt:bounded(s?.qAt,0,95,20),eAt:bounded(s?.eAt,0,95,45),aAt:bounded(s?.aAt,0,95,70)});
 function cleanSticker(s){return {id:String(s?.id||Date.now()+'-'+Math.random()),icon:['❓','❗','💡','✅','✏️','🎯','➡️','⭐','⭕','⚠️'].includes(s?.icon)?s.icon:'❓',x:bounded(s?.x,0,1,.5),y:bounded(s?.y,0,1,.38),size:bounded(s?.size,45,380,140),start:bounded(s?.start,0,95,10),end:bounded(s?.end,5,100,95),animation:['pop','fade','spin','static'].includes(s?.animation)?s.animation:'pop',effect:NM.audiomix.effect(s?.effect)}}
 function cleanAudio(a){return {...NM.audiomix.settings(a),offset:bounded(a?.offset,0,30,0),volume:bounded(a?.volume,0,1,1)}}
-function cleanProject(x){if(!Array.isArray(x?.scenes)||!x.scenes.length||x.scenes.length>100)throw Error('ملف المشروع غير صالح');return {projectId:String(x.projectId||makeSceneId()),name:String(x.name||'مشروع').slice(0,120),theme:themes.includes(x.theme)?x.theme:'notebook',branding:cleanBranding(x.branding),fonts:NM.fonts.clean(x.fonts),captions:NM.captions.settings(x.captions),overlays:NM.overlays.project(x.overlays),audio:cleanAudio(x.audio),scenes:x.scenes.map(cleanScene)}}
-let state={projectId:makeSceneId(),name:'حل معادلة لوغاريتمية',theme:'notebook',branding:cleanBranding(brandingDefaults),fonts:NM.fonts.clean(),captions:NM.captions.settings(),overlays:NM.overlays.project(),audio:cleanAudio(null),scenes:defaults.map(cleanScene)};
+function cleanProject(x){if(!Array.isArray(x?.scenes)||!x.scenes.length||x.scenes.length>600)throw Error('ملف المشروع غير صالح');return {projectId:String(x.projectId||makeSceneId()),name:String(x.name||'مشروع').slice(0,120),format:x.format==='landscape'?'landscape':'portrait',chapters:Array.isArray(x.chapters)?x.chapters.filter(c=>Number.isInteger(c?.scene)&&c.scene>=0).slice(0,200).map(c=>({scene:c.scene,title:String(c.title||'').slice(0,120)})):[],theme:themes.includes(x.theme)?x.theme:'notebook',branding:cleanBranding(x.branding),fonts:NM.fonts.clean(x.fonts),captions:NM.captions.settings(x.captions),overlays:NM.overlays.project(x.overlays),audio:cleanAudio(x.audio),scenes:x.scenes.map(cleanScene)}}
+let state={projectId:makeSceneId(),name:'حل معادلة لوغاريتمية',format:'portrait',chapters:[],theme:'notebook',branding:cleanBranding(brandingDefaults),fonts:NM.fonts.clean(),captions:NM.captions.settings(),overlays:NM.overlays.project(),audio:cleanAudio(null),scenes:defaults.map(cleanScene)};
 try{const saved=JSON.parse(localStorage.getItem('nibor-motion-v1'));if(saved)state=cleanProject(saved)}catch(e){console.warn('تعذر استعادة المشروع',e)}
 NM.project=state;let subtitleTimeline=[],audioTimeline=null;const rebuildTimeline=()=>{NM.project=state;subtitleTimeline=NM.captions.schedule(state,id=>voiceBlobs?.has(id));audioTimeline=NM.audiomix.timeline(state,voiceBlobs||new Map());};
 let selectedStickerId=null,selectedElement=null,elementGesture=null;let index=0,playing=false,exporting=false,playToken=0,clock=0,mathfieldReady=false,fieldSync=false,renderTicket=0;
-const ctx=$('stage').getContext('2d',{alpha:false});const CW=1080,CH=1920;
+const ctx=$('stage').getContext('2d',{alpha:false});let CW=1080,CH=1920;
+/** v0.25 project format: portrait 1080×1920 (reels) or landscape 1920×1080 (YouTube lessons). */
+const FORMATS={portrait:[1080,1920],landscape:[1920,1080]};
+function applyFormat(){const [w,h]=FORMATS[state.format]||FORMATS.portrait;if(CW!==w||CH!==h||ctx.canvas.width!==w){CW=w;CH=h;ctx.canvas.width=w;ctx.canvas.height=h;document.body.classList.toggle('nm-landscape',state.format==='landscape')}}
+/** Text widths: wider in landscape when no simulation takes the left half. */
+const WF=scene=>state.format==='landscape'&&!scene?.sim?.model?1.6:1;NM.layoutWF=WF;
 const mathCache=new Map();let mathReady=false;
 const mathKey=(raw,color)=>color+'|'+String(raw||'').trim();
 const sceneFormulaKeys=()=>new Set(state.scenes.flatMap(s=>[
@@ -325,7 +330,7 @@ function elementBounds(kind,scene){
  }
  if(!scene[kind])return null;
  const x=CW*scene[kind+'X']/100,y=CH*scene[kind+'Y']/100;
- const width=kind==='title'?890:kind==='question'?900:kind==='equation'?865*scene.equationScale/100:830*scene.answerScale/100;
+ const width=(kind==='title'?890:kind==='question'?900:kind==='equation'?865*scene.equationScale/100:830*scene.answerScale/100)*WF(scene);
  const height=kind==='title'?Math.max(145,scene.titleSize*2.6):kind==='question'?Math.max(125,scene.questionSize*5):kind==='equation'?175*scene.equationScale/100:190*scene.answerScale/100;
  return {cx:x,cy:y,w:Math.min(960,width),h:height};
 }
@@ -355,34 +360,35 @@ function visualResize(value){if(!selectedElement||playing)return;const scene=sta
  else {const key=ELEMENT_KEYS[selectedElement][2];const limits=selectedElement==='title'?[30,100]:selectedElement==='question'?[30,90]:[60,150];scene[key]=bounded(value,...limits,scene[key]);syncTypographyControls();}
  save();syncVisualPanel();renderCurrent();}
 function render(p=1,options={guides:!exporting}){
+ applyFormat();
  const scene=state.scenes[index],w=CW,h=CH,theme=state.theme;
  const fg=theme==='dark'||theme==='blackboard'?'#f4f7ff':'#173a5c';
  ctx.save();ctx.setTransform(1,0,0,1,0,0);
  ctx.fillStyle=theme==='blackboard'?'#143d34':theme==='dark'?'#17253a':theme==='clean'?'#ffffff':'#faf6ea';ctx.fillRect(0,0,w,h);
- if(!NM.sim?.draw(ctx,scene,p,{dark:theme==='dark'||theme==='blackboard'})&&NM.coneCinematic?.stageOf(scene)) NM.coneCinematic.draw(ctx,scene,p);
+ if(!NM.sim?.draw(ctx,scene,p,{dark:theme==='dark'||theme==='blackboard',landscape:state.format==='landscape'})&&NM.coneCinematic?.stageOf(scene)) NM.coneCinematic.draw(ctx,scene,p);
  if(theme==='notebook'){ctx.strokeStyle='#dadfdd';ctx.lineWidth=2;for(let y=62;y<h;y+=74){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}}
  const absoluteTime=sceneStart(index)+state.scenes[index].duration*Math.max(0,Math.min(1,p));
  const isHook=NM.overlays.hook(ctx,scene,p,theme,text);
- if(!isHook&&state.branding.showHeader&&state.branding.header)text(ctx,state.branding.header,540,145,860,state.branding.headerSize,fg,500,/[\u0600-\u06ff]/.test(state.branding.header)?'rtl':'ltr');
+ if(!isHook&&state.branding.showHeader&&state.branding.header)text(ctx,state.branding.header,CW/2,state.format==='landscape'?58:145,state.format==='landscape'?1500:860,state.branding.headerSize,fg,500,/[\u0600-\u06ff]/.test(state.branding.header)?'rtl':'ltr');
  const titleY=h*scene.titleY/100,questionY=h*scene.questionY/100,equationY=h*scene.equationY/100,answerY=h*scene.answerY/100;
  if(!isHook)textMotion(ctx,p,0,'title',()=>{
-  const titleLayout=measureTextBlock(ctx,scene.title,820,scene.titleSize,800,2,30,150);
-  drawTextBackdrop(ctx,scene.titleBg,CW*scene.titleX/100,titleY,890,Math.max(145,titleLayout.height+20),scene.titleBgColor);
-  text(ctx,scene.title,CW*scene.titleX/100,titleY,820,scene.titleSize,backdropTextColor(scene.titleBg,scene.titleBgColor,fg),800,'rtl',2,30,150);
+  const titleLayout=measureTextBlock(ctx,scene.title,820*WF(scene),scene.titleSize,800,2,30,150);
+  drawTextBackdrop(ctx,scene.titleBg,CW*scene.titleX/100,titleY,890*WF(scene),Math.max(145,titleLayout.height+20),scene.titleBgColor);
+  text(ctx,scene.title,CW*scene.titleX/100,titleY,820*WF(scene),scene.titleSize,backdropTextColor(scene.titleBg,scene.titleBgColor,fg),800,'rtl',2,30,150);
  });
  if(!isHook)textMotion(ctx,p,scene.qAt/100,'question',()=>{
-  drawMixedQuestion(ctx,scene,CW*scene.questionX/100,questionY,830,backdropTextColor(scene.questionBg,scene.questionBgColor,fg));
+  drawMixedQuestion(ctx,scene,CW*scene.questionX/100,questionY,830*WF(scene),backdropTextColor(scene.questionBg,scene.questionBgColor,fg));
  });
- if(!isHook)NM.mathanim.draw(ctx,scene,p,index>0?state.scenes[index-1]:null,(tex,color)=>math(ctx,tex,CW*scene.equationX/100,equationY,865*scene.equationScale/100,175*scene.equationScale/100,color),fg,state.captions.highlight);
+ if(!isHook)NM.mathanim.draw(ctx,scene,p,index>0?state.scenes[index-1]:null,(tex,color)=>math(ctx,tex,CW*scene.equationX/100,equationY,865*WF(scene)*scene.equationScale/100,175*scene.equationScale/100,color),fg,state.captions.highlight);
  if(!isHook&&scene.answer)fade(ctx,p,scene.aAt/100,()=>{
-  drawTextBackdrop(ctx,scene.answerBg,CW*scene.answerX/100,answerY,830,Math.max(190,190*scene.answerScale/100),scene.answerBgColor);
-  math(ctx,scene.answer,CW*scene.answerX/100,answerY,775*scene.answerScale/100,150*scene.answerScale/100,answerFormulaColor(scene));
+  drawTextBackdrop(ctx,scene.answerBg,CW*scene.answerX/100,answerY,830*WF(scene),Math.max(190,190*scene.answerScale/100),scene.answerBgColor);
+  math(ctx,scene.answer,CW*scene.answerX/100,answerY,775*WF(scene)*scene.answerScale/100,150*scene.answerScale/100,answerFormulaColor(scene));
  });
- if(!isHook&&state.branding.showFooter&&state.branding.footer)text(ctx,state.branding.footer,540,1795,860,state.branding.footerSize,fg,400,/[\u0600-\u06ff]/.test(state.branding.footer)?'rtl':'ltr');
+ if(!isHook&&state.branding.showFooter&&state.branding.footer)text(ctx,state.branding.footer,CW/2,state.format==='landscape'?CH-46:1795,state.format==='landscape'?1500:860,state.branding.footerSize,fg,400,/[\u0600-\u06ff]/.test(state.branding.footer)?'rtl':'ltr');
  NM.overlays.progress(ctx,state.overlays,absoluteTime,seconds());
  NM.captions.draw(ctx,state,subtitleTimeline,absoluteTime);
  NM.mathStudio.draw(ctx,scene,p,fg,(raw,x,y,w,h,color)=>math(ctx,raw,x,y,w,h,color));drawStickers(ctx,scene,p);NM.freeEditor.draw(ctx,scene,p,{math:(raw,x,y,w,h,color)=>math(ctx,raw,x,y,w,h,color),font:(role,weight,size)=>NM.font(role,weight,size),text});
- if(options.guides){selectionBox(ctx,scene);NM.freeEditor.guides(ctx,scene);NM.mathStudio.guides(ctx,scene);NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&NM.overlays.intersects({x:60,y:1920*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
+ if(options.guides){selectionBox(ctx,scene);NM.freeEditor.guides(ctx,scene);NM.mathStudio.guides(ctx,scene);NM.overlays.guide(ctx,state.overlays.safeGuide);const cap=NM.captions.select(subtitleTimeline,absoluteTime);if(cap&&state.format!=='landscape'&&NM.overlays.intersects({x:60,y:CH*state.captions.y/100-75,w:960,h:150},state.overlays.safeGuide))status('تنبيه: الترجمة تدخل المنطقة المغطاة في المنصة؛ غيّر موضعها');if(state.format!=='landscape'&&NM.overlays.intersects({x:100,y:equationY-100,w:880,h:200},state.overlays.safeGuide))status('تنبيه: المعادلة قد تدخل المنطقة المغطاة في المنصة')}
  ctx.restore();updateSeek();NM.timelineEditor.position?.();
 }
 
@@ -406,7 +412,7 @@ async function exportVideoRealtime(opts={}){
   const formats=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp9','video/webm'];
   const mime=formats.find(v=>MediaRecorder.isTypeSupported(v));if(!mime)throw Error('لا توجد صيغة فيديو مدعومة');
   const pending=usedMathPairs().map(([raw,color])=>warmMath(raw,color));
-  await Promise.race([Promise.all(pending),wait(12000)]);
+  await Promise.race([Promise.all(pending),wait(12000+150*pending.length)]);
   if(token!==playToken){cancelled=true;return}
   const missing=usedMathPairs().filter(([raw,color])=>!mathCache.get(mathKey(raw,color))?.ready);
   if(missing.length)throw Error('تعذر تجهيز بعض المعادلات، عالجها قبل التصدير');
@@ -463,24 +469,43 @@ async function exportVideoOffline(){
   if(cancelledNow())return outcome='cancelled';
   if(!confirmMissingVoices())return outcome='cancelled';
   const pending=usedMathPairs().map(([raw,color])=>warmMath(raw,color));
-  await Promise.race([Promise.all(pending),wait(12000)]);
+  await Promise.race([Promise.all(pending),wait(12000+150*pending.length)]);
   if(cancelledNow())return outcome='cancelled';
   if(usedMathPairs().some(([raw,color])=>!mathCache.get(mathKey(raw,color))?.ready))throw Error('تعذر تجهيز بعض المعادلات، عالجها قبل التصدير');
   const total=seconds();
   const needsAudio=!!(state.scenes.some(s=>voiceBlobs.has(s.id))||musicBlob||NM.audiomix.timeline(state,voiceBlobs).events.length);
-  const support=await NM.webExport.probe({width:CW,height:CH,fps:EXPORT_FPS,bitrate:8000000,needsAudio});
+  // Long lessons: lower bitrate (mostly still frames), audio mixed in windows, and output streamed to disk when possible.
+  const long=total>180,bitrate=state.format==='landscape'?(total>600?2500000:5000000):8000000;
+  const support=await NM.webExport.probe({width:CW,height:CH,fps:EXPORT_FPS,bitrate,needsAudio});
   if(!support.ok){status('التصدير السريع غير متاح ('+support.reason+')؛ سيُستخدم التسجيل المباشر.');return outcome='fallback'}
-  let audioBuffer=null;
-  if(needsAudio){status('جارٍ مزج الصوت…');audioBuffer=await NM.webExport.renderAudio(total,async(ac,dest)=>{const prepared=await NM.audiomix.prepare(ac,state,voiceBlobs,musicBlob);NM.audiomix.startPrepared(ac,dest,state,prepared,0)})}
+  let audioBuffer=null,audioWindow=null;
+  if(needsAudio){status('جارٍ تجهيز الصوت…');
+   if(long){const prepCtx=new OfflineAudioContext(2,1,NM.webExport.AUDIO_RATE);const prepared=await NM.audiomix.prepare(prepCtx,state,voiceBlobs,musicBlob);
+    audioWindow=async(from,to)=>{const ac=new OfflineAudioContext(2,Math.max(1,Math.ceil((to-from)*NM.webExport.AUDIO_RATE)),NM.webExport.AUDIO_RATE);NM.audiomix.startPreparedWindow(ac,ac.destination,state,prepared,from,to);return ac.startRendering()}}
+   else audioBuffer=await NM.webExport.renderAudio(total,async(ac,dest)=>{const prepared=await NM.audiomix.prepare(ac,state,voiceBlobs,musicBlob);NM.audiomix.startPrepared(ac,dest,state,prepared,0)})}
   if(cancelledNow())return outcome='cancelled';
-  const started=performance.now();let lastUi=0;
-  const blob=await NM.webExport.run({canvas:$('stage'),fps:EXPORT_FPS,totalSeconds:total,audioBuffer,support,isCancelled:cancelledNow,
-   renderFrame:t=>{clock=t;const at=atTime(Math.min(t,total-0.001));index=at.index;render(at.progress,{guides:false})},
-   onProgress:(done,all)=>{const now=performance.now();if(now-lastUi<250&&done<all)return;lastUi=now;const pct=Math.floor(100*done/all);const el=(now-started)/1000;const left=done>5?Math.max(0,Math.round(el*(all-done)/done)):null;status(`جارٍ التصدير ${pct}٪ — الإطار ${done} من ${all}`+(left!==null?` — متبقٍ نحو ${left} ث`:''));updateSeek()}});
+  const disk=long&&await NM.webExport.diskAvailable();
+  const estimate=total*(bitrate+160000)/8;
+  // Without disk streaming, a file must fit in memory: split into parts of ≤ ~10 min at scene boundaries.
+  const parts=[],partSecs=NM.exportPartSeconds||600;
+  if(!disk&&estimate>(NM.exportPartBytes||350e6)){let start=0,acc=0;for(let i=0;i<state.scenes.length;i++){acc+=state.scenes[i].duration;if(acc-start>=partSecs&&i<state.scenes.length-1){parts.push([start,acc]);start=acc}}parts.push([start,total])}
+  else parts.push([0,total]);
+  const started=performance.now();let lastUi=0,doneBefore=0;
+  for(let k=0;k<parts.length;k++){
+   const [from,to]=parts[k],label=parts.length>1?` (الجزء ${k+1} من ${parts.length})`:'';
+   const blob=await NM.webExport.run({canvas:$('stage'),fps:EXPORT_FPS,startTime:from,totalSeconds:to-from,audioBuffer:parts.length===1?audioBuffer:null,audioWindow,disk,support,isCancelled:cancelledNow,
+    renderFrame:t=>{clock=t;const at=atTime(Math.min(t,total-0.001));index=at.index;render(at.progress,{guides:false})},
+    onAudioProgress:(d,all)=>status(`جارٍ مزج الصوت${label} ${Math.floor(100*d/all)}٪`),
+    onProgress:(done,all)=>{const now=performance.now();if(now-lastUi<250&&done<all)return;lastUi=now;const g=doneBefore+done,G=Math.round(total*EXPORT_FPS);const pct=Math.floor(100*g/G);const el=(now-started)/1000;const left=g>5?Math.max(0,Math.round(el*(G-g)/g)):null;status(`جارٍ التصدير${label} ${pct}٪ — الإطار ${g} من ${G}`+(left!==null?` — متبقٍ نحو ${left>90?Math.round(left/60)+' د':left+' ث'}`:''));updateSeek()}});
+   doneBefore+=Math.round((to-from)*EXPORT_FPS);
+   download(blob,`${safeFileName()}-v${APP_VERSION}${parts.length>1?'-part'+(k+1):''}.mp4`);
+  }
+  if(state.chapters?.length>=2){const starts=[];let acc=0;state.scenes.forEach(s=>{starts.push(acc);acc+=s.duration});const ts=t=>{t=Math.floor(t);const h=Math.floor(t/3600),m=Math.floor(t%3600/60),sec=t%60;return (h?h+':'+String(m).padStart(2,'0'):String(m).padStart(2,'0'))+':'+String(sec).padStart(2,'0')};
+   const lines=state.chapters.filter(c=>c.scene<state.scenes.length).map((c,i)=>`${ts(i===0?0:starts[c.scene])} ${c.title}`);
+   download(new Blob(['﻿'+'الفصول (انسخها في وصف فيديو يوتيوب):\n'+lines.join('\n')+'\n'],{type:'text/plain;charset=utf-8'}),`${safeFileName()}-chapters.txt`)}
   const took=(performance.now()-started)/1000;
-  download(blob,`${safeFileName()}-v${APP_VERSION}.mp4`);
   const voices=state.scenes.filter(s=>voiceBlobs.has(s.id)).length;
-  status(`تم إنشاء MP4 بمعدل ${EXPORT_FPS} إطاراً/ث ثابت`+(audioBuffer?` مع ${voices} تعليق صوتي`+(support.audio.mux==='opus'?' (الصوت بترميز Opus لأن هذا المتصفح لا يدعم ترميز AAC)':''):'')+` خلال ${took.toFixed(1)} ث لفيديو مدته ${total.toFixed(1)} ث.`);
+  status(`تم إنشاء MP4 بمعدل ${EXPORT_FPS} إطاراً/ث ثابت`+(needsAudio?` مع ${voices} تعليق صوتي`+(support.audio?.mux==='opus'?' (الصوت بترميز Opus لأن هذا المتصفح لا يدعم ترميز AAC)':''):'')+` خلال ${took>120?(took/60).toFixed(1)+' د':took.toFixed(1)+' ث'} لفيديو مدته ${total>120?(total/60).toFixed(1)+' د':total.toFixed(1)+' ث'}`+(parts.length>1?` في ${parts.length} أجزاء (التخزين التدريجي غير متاح في هذا المتصفح).`:disk?' (كُتب تدريجياً إلى التخزين).':'.')+(state.chapters?.length>=2?' ونُزّل ملف الفصول لوصف يوتيوب.':''));
   return outcome='done';
  }catch(err){
   if(err?.cancelled||cancelledNow())return outcome='cancelled';
@@ -668,7 +693,7 @@ NM.core={
  musicKeyFor:pid=>'project:'+pid+':music',
  newId:()=>makeSceneId(),
  /** A fresh project that keeps the current look (theme, branding, fonts, captions, overlays, audio settings). */
- blankProject(){return cleanProject({...JSON.parse(JSON.stringify(state)),projectId:makeSceneId(),name:'مشروع جديد',scenes:defaults.map(d=>({...d,id:makeSceneId()}))})},
+ blankProject(){return cleanProject({...JSON.parse(JSON.stringify(state)),projectId:makeSceneId(),name:'مشروع جديد',format:'portrait',chapters:[],scenes:defaults.map(d=>({...d,id:makeSceneId()}))})},
  /** Replace state from a snapshot without resetting the scene position (undo/redo, restoring a backup). */
  /** v0.19 recording booth: draw scene i at progress p without saving (no state change). */
  preview(i,p){if(playing||exporting)return;i=Math.max(0,Math.min(state.scenes.length-1,i));if(i!==index){index=i;selectedElement=null;drawControls()}clock=sceneStart(i)+state.scenes[i].duration*Math.max(0,Math.min(1,p));render(Math.max(0,Math.min(1,p)),{guides:false})},

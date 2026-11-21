@@ -81,7 +81,8 @@ window.NM = window.NM || {};
     const big = el('button', { type: 'button', className: 'nm-booth-big', textContent: '● ابدأ التسجيل' });
     const retake = el('button', { type: 'button', className: 'secondary', textContent: '↺ أعِد هذا المشهد', disabled: true });
     const prev = el('button', { type: 'button', className: 'secondary', textContent: '→ المشهد السابق' });
-    const cancel = el('button', { type: 'button', className: 'secondary', textContent: 'إلغاء' });
+    const cancel = el('button', { type: 'button', className: 'secondary', textContent: 'إلغاء (لا يُحفظ شيء)' });
+    const saveStop = el('button', { type: 'button', className: 'secondary', textContent: '⏹ إيقاف وحفظ ما سُجّل', disabled: true });
     const close = el('button', { type: 'button', className: 'secondary nm-booth-close', textContent: '✕ إغلاق' });
     const one = el('input', { type: 'checkbox' }), fit = el('input', { type: 'checkbox', checked: true });
     const opts = el('div', { className: 'nm-booth-opts' },
@@ -93,10 +94,12 @@ window.NM = window.NM || {};
         el('div', { className: 'nm-booth-stage' }, preview, el('div', { className: 'nm-booth-live' }, meter, clock), take),
         el('div', { className: 'nm-booth-side' }, title, prompt, opts,
           el('div', { className: 'nm-booth-actions' }, big),
-          el('div', { className: 'nm-booth-actions' }, prev, retake, cancel), msg)));
+          el('div', { className: 'nm-booth-actions' }, prev, retake, saveStop, cancel), msg)));
     const wrap = el('div', { className: 'nm-booth-backdrop', hidden: true }, box);
     document.body.append(wrap);
-    ui = { wrap, preview, counter, title, prompt, meter: meter.firstChild, clock, take, msg, big, retake, prev, cancel, close, one, fit };
+    ui = { wrap, preview, counter, title, prompt, meter: meter.firstChild, clock, take, msg, big, retake, prev, cancel, saveStop, close, one, fit };
+    // Long lessons are recorded in sittings: stop here and keep every scene read so far (the current one included).
+    saveStop.onclick = () => { if (!session?.recording) return; session.marks.push({ id: session.ids[session.i], index: session.i, start: session.segStart, end: session.now() }); stop(true); };
     close.onclick = () => closeBooth();
     cancel.onclick = () => stop(false);
     retake.onclick = () => { if (!session?.recording) return; session.segStart = session.now(); session.segScene = session.i; ui.msg.textContent = 'أعد قراءة المشهد من بدايته.'; };
@@ -119,7 +122,7 @@ window.NM = window.NM || {};
     ui.prev.disabled = session?.recording ? session.i <= session.first : i === 0;
     if (!session) { NM.core.preview(i, 1); mirror(); }
   }
-  function mirror() { const src = document.getElementById('stage'); if (src) { const c = ui.preview.getContext('2d'); c.drawImage(src, 0, 0, ui.preview.width, ui.preview.height); } }
+  function mirror() { const src = document.getElementById('stage'); if (!src) return; const w = src.width > src.height ? 640 : 360, h = src.width > src.height ? 360 : 640; if (ui.preview.width !== w) { ui.preview.width = w; ui.preview.height = h; } ui.preview.getContext('2d').drawImage(src, 0, 0, w, h); }
 
   function openBooth() {
     if (!NM.core) return;
@@ -149,7 +152,7 @@ window.NM = window.NM || {};
     for (const n of [3, 2, 1]) { ui.big.textContent = String(n); NM.core.preview(cursor, 0); mirror(); await new Promise(r => setTimeout(r, 700)); if (!session) return; }
     await new Promise(r => { rec.onstart = r; rec.start(250); });
     session.t0 = performance.now(); session.segStart = 0; session.recording = true;
-    ui.big.disabled = false; ui.retake.disabled = false; show(); loop();
+    ui.big.disabled = false; ui.retake.disabled = false; ui.saveStop.disabled = false; show(); loop();
   }
 
   function loop() {
@@ -180,7 +183,7 @@ window.NM = window.NM || {};
     try { if (s.rec.state !== 'inactive') s.rec.stop(); } catch (e) { /* already stopped */ }
     await done.catch(() => {});
     s.stream.getTracks().forEach(t => t.stop());
-    session = null; ui.one.disabled = ui.fit.disabled = false; ui.retake.disabled = true; ui.big.disabled = false;
+    session = null; ui.one.disabled = ui.fit.disabled = false; ui.retake.disabled = true; ui.saveStop.disabled = true; ui.big.disabled = false;
     ui.clock.textContent = '0:00'; ui.meter.style.width = '0'; ui.take.textContent = '';
     if (!keep || !s.marks.length) { s.ac.close().catch(() => {}); ui.msg.textContent = 'أُلغي التسجيل، ولم يتغير شيء.'; show(); return; }
     ui.msg.textContent = 'جارٍ معالجة التسجيل…';
