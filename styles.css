@@ -356,3 +356,8 @@ body.nm-simple [data-mobile-tab=elements],body.nm-simple [data-mobile-tab=motion
 .nm-home .nm-project.current{outline:2px solid #2fa37a}
 .nm-home-btn{margin-inline-start:auto}
 @media(max-width:520px){.nm-home-new{grid-template-columns:1fr}}
+
+/* v0.25.0 landscape (16:9) projects */
+body.nm-landscape .stage-wrap canvas,body.nm-landscape.studio-ready .preview-panel .stage-wrap canvas,body.nm-landscape.studio-ready.studio-drawer-open .preview-panel .stage-wrap canvas{aspect-ratio:16/9;width:100%!important;height:auto!important;max-height:none!important}
+body.nm-landscape .nm-booth-preview{aspect-ratio:16/9;height:auto;width:min(48vw,640px)}
+@media (orientation:portrait){body.nm-landscape .nm-booth-preview{width:min(92vw,640px);height:auto}}

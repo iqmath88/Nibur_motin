@@ -294,7 +294,7 @@
         return;
       // Keep project-level settings (theme, branding, fonts, captions, music) — replace only name and scenes.
       window.NM.loadProject(
-        { ...current, name: generated.name, scenes: generated.scenes },
+        { ...current, name: generated.name, scenes: generated.scenes, format: 'portrait', chapters: [] },
         "تم إنشاء مشاهد الريلز. راجع كل خطوة، ثم ولّد أو سجّل الصوت لكل مشهد من قسم الصوت.",
       );
       status.textContent = `✓ أُنشئ ${generated.scenes.length} مشاهد. نص التعليق الصوتي جاهز في كل مشهد.`;

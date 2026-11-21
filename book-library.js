@@ -190,6 +190,7 @@ window.NM = window.NM || {};
     return {
       ...existing,
       projectId: 'book-' + id,
+      format: 'portrait', chapters: [],
       name: `${reel ? 'ريلز · ' : ''}${book.title} · مثال ${ex.num} ص ${ex.page}${ex.title ? ' — ' + ex.title : ''}`.slice(0, 120),
       theme: 'dark',
       branding: { ...existing.branding, showHeader: true, showFooter: true, header: `${book.grade} · ${book.title} · [${lesson.num}]`, footer: `مثال ${ex.num} · ص ${ex.page} · Math-books` },
@@ -205,6 +206,69 @@ window.NM = window.NM || {};
     };
   }
 
+  // ---- «درس كامل»: فيديو أفقي 16:9 لليوتيوب: الشرح ثم كل مثال في موضعه، مع فصول (chapters) ----
+  const LAND = {
+    sim: { titleX: 50, titleY: 14, questionX: 74, questionY: 32, equationX: 74, equationY: 64, titleSize: 52, questionSize: 42, equationScale: 105 },
+    text: { titleX: 50, titleY: 15, questionX: 50, questionY: 38, equationX: 50, equationY: 66, titleSize: 58, questionSize: 48, equationScale: 125 },
+    card: { titleX: 50, titleY: 40, questionX: 50, questionY: 58, equationX: 50, equationY: 75, titleSize: 76, questionSize: 40, equationScale: 110 }
+  };
+  function simFor(key, segment) {
+    const spec = SIMS[key]; if (!spec || !NM.sim) return null;
+    const m = NM.sim.MODELS[spec.model], params = NM.sim.clean({ model: spec.model, params: spec.params }).params;
+    const hold = holdIndex(segment, spec.target);
+    const { stops, extent } = NM.sim.approach(m, params, spec.target, segment.length, hold);
+    const cams = NM.sim.cameraChain(segment.length, hold < segment.length ? hold : -1);
+    return segment.map((s, i) => ({ model: spec.model, params, from: stops[i], to: stops[i + 1], extent, ease: 'physical', readout: true, unit: spec.unit, time: spec.time, camera: cams[i] }));
+  }
+  function lessonScenes(book, lesson) {
+    const out = [], chapters = [];
+    const card = (title, question) => ({ title, question, equation: '', result: false, duration: 4, layout: 'card', card: true });
+    out.push(card(lesson.title, `${book.grade} · ${book.title} · البند [${lesson.num}] · ص ${lesson.pages}`));
+    chapters.push({ scene: 0, title: 'مقدمة: ' + lesson.title });
+    const done = new Set();
+    const flow = [...(lesson.flow || []), ...lesson.examples.filter(e => !(lesson.flow || []).some(f => f.key === e.key)).map(e => ({ t: 'example', key: e.key }))];
+    for (const f of flow) {
+      if (f.t === 'concept') {
+        const pseudo = { num: '', page: f.page, title: f.title || lesson.title, steps: [{ label: f.title || lesson.title, result: false, items: f.items.map(i => i.t === 'text' && !i.from ? { ...i, from: 'p' } : i) }] };
+        for (const sc of scenesFor(book, lesson, pseudo)) out.push({ ...sc, layout: 'text' });
+      } else {
+        const ex = lesson.examples.find(e => e.key === f.key); if (!ex || done.has(ex.key)) continue; done.add(ex.key);
+        const label = `مثال ${ex.num} · ص ${ex.page}`;
+        chapters.push({ scene: out.length, title: label + (ex.title ? ' — ' + ex.title : '') });
+        out.push(card(label, ex.title || ''));
+        const seg = scenesFor(book, lesson, ex), sims = simFor(`${book.id}/${ex.key}`, seg);
+        seg.forEach((sc, i) => out.push({ ...sc, layout: sims ? 'sim' : 'text', sim: sims ? sims[i] : undefined }));
+      }
+    }
+    return { scenes: out, chapters };
+  }
+  function buildLesson(base, lessonKey) {
+    const [bookId, lessonId] = String(lessonKey).split('/');
+    const book = NM.bookData?.books.find(b => b.id === bookId), lesson = book?.lessons.find(l => l.id === lessonId);
+    if (!lesson) throw Error('الدرس غير موجود في المكتبة');
+    const { scenes, chapters } = lessonScenes(book, lesson);
+    if (scenes.length > 600) throw Error('الدرس أطول من 600 مشهد');
+    const existing = JSON.parse(JSON.stringify(base)), id = Date.now().toString(36);
+    return {
+      ...existing,
+      projectId: 'lesson-' + id, format: 'landscape', chapters,
+      name: `درس · ${book.title} · [${lesson.num}] ${lesson.title}`.slice(0, 120),
+      theme: 'dark',
+      overlays: { ...(existing.overlays || {}), safeGuide: 'none', progress: true },
+      branding: { ...existing.branding, showHeader: true, showFooter: true, header: `${book.grade} · ${book.title} · [${lesson.num}] ${lesson.title}`, footer: `ص ${lesson.pages} · Math-books` },
+      scenes: scenes.map((s, i) => ({
+        id: `lesson-${id}-${i + 1}`,
+        title: s.title, question: s.question, equation: s.equation, answer: '',
+        speechText: [readable(s.question), s.equation ? '⁦' + texText(s.equation) + '⁩' : ''].filter(Boolean).join(' — ').slice(0, 4000) || s.title,
+        duration: Math.round(s.duration * 2) / 2, qAt: s.card ? 8 : 6, eAt: s.question ? 30 : 6, aAt: 80, equationAnimDuration: 30,
+        ...LAND[s.layout],
+        titleBg: s.result ? 'rounded' : 'none', titleBgColor: '#f4d96c', questionBg: 'none',
+        equationAnim: s.card ? 'fade' : 'morph', transition: 'slide',
+        ...(s.sim ? { sim: s.sim } : {})
+      }))
+    };
+  }
+
   // ---- UI ----
   const el = (tag, props = {}, ...kids) => { const e = document.createElement(tag); Object.assign(e, props); for (const k of kids) e.append(k); return e; };
   function init() {
@@ -213,7 +277,7 @@ window.NM = window.NM || {};
     const data = NM.bookData;
     const box = el('section', { id: 'nmBookLibrary', className: 'nm-sim-generator' });
     const bookSel = el('select', { id: 'nmBookSelect' }), lessonSel = el('select', { id: 'nmLessonSelect' }), exSel = el('select', { id: 'nmExampleSelect' });
-    const modeSel = el('select', { id: 'nmBookMode' }, el('option', { value: 'reel', textContent: 'ريلز قصير: المعادلات على الشاشة والشرح بصوتك (≈ دقيقة)' }), el('option', { value: 'full', textContent: 'شرح كامل: كل نصوص الكتاب على الشاشة' }));
+    const modeSel = el('select', { id: 'nmBookMode' }, el('option', { value: 'reel', textContent: 'ريلز قصير: المعادلات على الشاشة والشرح بصوتك (≈ دقيقة)' }), el('option', { value: 'full', textContent: 'شرح كامل لمثال: كل نصوص الكتاب على الشاشة' }), el('option', { value: 'lesson', textContent: 'درس كامل لليوتيوب (أفقي 16:9): الشرح وكل الأمثلة' }));
     const info = el('p', { className: 'muted', role: 'status' }), btn = el('button', { type: 'button', id: 'nmBookGenerate', textContent: '📚 إنشاء فيديو المثال' });
     for (const b of data.books) bookSel.append(el('option', { value: b.id, textContent: `${b.grade} · ${b.title}` }));
     const book = () => data.books.find(b => b.id === bookSel.value);
@@ -223,6 +287,9 @@ window.NM = window.NM || {};
     function fillExamples() { exSel.replaceChildren(); for (const e of lesson().examples) exSel.append(el('option', { value: e.key, textContent: `مثال ${e.num} · ص ${e.page}${e.title ? ' — ' + e.title : ''}${SIMS[`${bookSel.value}/${e.key}`] ? ' 🎬' : ''}` })); describe(); }
     function describe() {
       const f = findExample(key()); if (!f) { info.textContent = ''; return; }
+      if (modeSel.value === 'lesson') { const L = lessonScenes(f.book, f.lesson), secs = L.scenes.reduce((a, s) => a + s.duration, 0); exSel.disabled = true;
+        info.textContent = `الدرس كاملاً: ${L.scenes.length} مشهداً و${L.chapters.length - 1} مثالاً، نحو ${Math.round(secs / 60)} دقيقة قبل التسجيل (يطول مع صوتك). أفقي 1920×1080 مع فصول لليوتيوب.`; return; }
+      exSel.disabled = false;
       const full = scenesFor(f.book, f.lesson, f.ex), list = modeSel.value === 'full' ? full : reelScenes(full, f.ex), n = list.length, sim = SIMS[key()];
       const secs = Math.round(list.reduce((a, s) => a + s.duration, 0));
       info.textContent = `${n} مشهداً · نحو ${secs} ث قبل التسجيل${sim ? ' · مع محاكاة: ' + NM.sim.MODELS[sim.model].label + (sim.note ? ' — ' + sim.note : '') : ''}. النص والمعادلات من الكتاب كما في Math-books؛ راجعها قبل النشر.`;
@@ -236,7 +303,7 @@ window.NM = window.NM || {};
     btn.onclick = () => {
       if (!NM.core || !NM.loadProject) { info.textContent = 'المحرر غير جاهز بعد.'; return; }
       if (NM.core.busy()) { info.textContent = 'أوقف التشغيل أو التصدير أولاً.'; return; }
-      let project; try { project = buildProject(NM.core.getState(), key(), modeSel.value); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; return; }
+      let project; try { project = modeSel.value === 'lesson' ? buildLesson(NM.core.getState(), `${bookSel.value}/${lessonSel.value}`) : buildProject(NM.core.getState(), key(), modeSel.value); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; return; }
       if (!confirm('سيُنشأ مشروع جديد لهذا المثال، ويبقى المشروع الحالي محفوظاً في «🏠 مشاريعي». متابعة؟')) return;
       try { NM.loadProject(project, `تم إنشاء ${project.scenes.length} مشهداً من الكتاب. راجع المعادلات قبل التصدير.`); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; }
     };
@@ -247,7 +314,7 @@ window.NM = window.NM || {};
     panel.insertBefore(box, document.getElementById('nmSimGenerator') || null);
   }
   NM.texText = texText; NM.readableText = readable;
-  NM.bookLibrary = { SIMS, scenesFor, reelScenes, buildProject, findExample, init, _expand: expand, _chunks: chunks };
+  NM.bookLibrary = { SIMS, scenesFor, reelScenes, lessonScenes, buildLesson, buildProject, findExample, init, _expand: expand, _chunks: chunks };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0)); else setTimeout(init, 0);
   document.addEventListener('nm:core-ready', init);
 })(window.NM);

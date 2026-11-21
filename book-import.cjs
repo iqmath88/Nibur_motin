@@ -73,7 +73,7 @@ function parseFile(text) {
     if (!m) continue;
     const [, key, val] = m;
     switch (key) {
-      case 'k': if (!step.k || /^مثال/.test(val)) { step.k = val; step.h = ''; if (/^مثال/.test(val)) step.items = []; } break;
+      case 'k': (step.ks = step.ks || []).push(val); if (!step.k || /^مثال/.test(val)) { step.k = val; step.h = ''; if (/^مثال/.test(val)) step.items = []; } break;
       case 'h1': case 'h2': step.h = step.h || val; break;
       case 'p': case 'lead': if (!INTERACTIVE.test(val)) step.items.push({ t: 'text', v: val }); break;
       case 'rel': if (!val.startsWith('»')) step.items.push({ t: 'text', v: val, from: 'rel' }); break;
@@ -85,6 +85,30 @@ function parseFile(text) {
     }
   }
   return lessons;
+}
+
+/** Lesson flow for the «درس كامل» video: book explanation steps in order, with each example at its place.
+ *  Exercises (تمرين), website-only steps (.act/.extra/.enr) and the numbered solution steps of examples are excluded. */
+function flowOf(lesson, examples) {
+  const flow = [], byStep = new Map(examples.map(e => [e.step + '|' + e.num, e]));
+  let inExample = false;
+  for (const s of lesson.steps) {
+    const isEx = [s.k, s.h].some(x => x && /^مثال/.test(x)) && s.kind !== 'enr';
+    if (isEx) {
+      const num = ((s.k || s.h).match(/^مثال\s*(\d+)/) || [])[1] || '';
+      const ex = byStep.get(s.name + '|' + num) || examples.find(e => e.step === s.name);
+      if (ex && !flow.some(f => f.t === 'example' && f.key === ex.key)) flow.push({ t: 'example', key: ex.key });
+      inExample = true; continue;
+    }
+    if (s.n && inExample) continue;           // numbered solution step of the current example
+    inExample = false;
+    if (s.kind !== 'book') continue;
+    if ((s.ks || []).some(k => /تمرين|الفكرة|تمارين/.test(k))) continue;
+    const items = s.items.filter(i => i.t !== 'let' || i.rows.length);
+    if (!items.length && !s.h) continue;
+    flow.push({ t: 'concept', title: s.h || '', page: ((s.ks || []).join(' ').match(/ص\s*([\d–\-]+)/) || [])[1] || '', items });
+  }
+  return flow;
 }
 
 /** Group steps into book examples: a non-enrichment step whose k:/h2: starts with «مثال», plus the numbered steps after it. */
@@ -119,7 +143,7 @@ for (const f of files) {
     const examples = examplesOf(lesson);
     if (!examples.length) continue;
     total += examples.length;
-    books.get(id).lessons.push({ id: lesson.id, num: lesson.num, title: lesson.title, pages: lesson.pages, examples });
+    books.get(id).lessons.push({ id: lesson.id, num: lesson.num, title: lesson.title, pages: lesson.pages, examples, flow: flowOf(lesson, examples) });
   }
 }
 const order = id => (/^g12/.test(id) ? 0 : /^ch/.test(id) ? 1 : 2);

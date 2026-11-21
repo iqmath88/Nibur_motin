@@ -3,8 +3,8 @@
 اقرأ هذا الملف قبل أي تعديل. التطبيق PWA ثابت، بلا خطوة بناء: HTML وCSS وJavaScript عادي. **كل الملفات في مجلد واحد، بلا مجلدات فرعية**، ليسهل رفعها إلى GitHub من الهاتف.
 
 ## البنية
-- `app.js`: الحالة والرسم على Canvas (1080×1920) والتصدير والصوت. يكشف للوحدات الأخرى `NM.core` و`NM.loadProject` و`NM.speechFromMath`.
-- `export-webcodecs.js`: التصدير إطاراً بإطار (WebCodecs وmp4-muxer وOfflineAudioContext).
+- `app.js`: الحالة والرسم على Canvas (عمودي 1080×1920 أو أفقي 1920×1080 حسب `state.format`) والتصدير والصوت. استعمل `CW/CH` و`WF(scene)` لا أرقاماً ثابتة، وفي الوحدات `c.canvas.width/height`. يكشف للوحدات الأخرى `NM.core` و`NM.loadProject` و`NM.speechFromMath`.
+- `export-webcodecs.js`: التصدير إطاراً بإطار (WebCodecs وmp4-muxer وOfflineAudioContext). للفيديو الطويل: صوت على نوافذ (`audiomix.startPreparedWindow`)، وكتابة تدريجية إلى OPFS، أو أجزاء.
 - `project-store.js`: مكتبة المشاريع والنسخ الاحتياطية وحزمة `.nibor` والتراجع والإعادة.
 - `auto-reels.js`: مولّد الريلز (قوى i، والمعادلة التربيعية، والشرح المخصص).
 - `sim-engine.js`: محرك المحاكاة الرياضية (مخروط، وخزان، وصفيحة، وسلم، وظل، ومكعب جليدي). الحقل `sim` في المشهد، والرسم دالة في (المعطيات، والقيمة) فقط.

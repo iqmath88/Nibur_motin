@@ -62,7 +62,7 @@ window.NM=window.NM||{};
     const existing=JSON.parse(JSON.stringify(base));
     return {
       ...existing,
-      projectId:'cone-'+Date.now().toString(36),
+      projectId:'cone-'+Date.now().toString(36),format:'portrait',chapters:[],
       name:'المعدلات المرتبطة بالزمن — المخروط (نموذج)',
       theme:'dark',
       branding:{...existing.branding,header:'رياضيات السادس العلمي | المعدلات المرتبطة بالزمن',footer:'Nibor Motion · محاكاة المخروط'},
