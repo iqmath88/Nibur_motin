@@ -178,7 +178,8 @@ window.NM = window.NM || {};
     if (simSpec && NM.sim) {
       const m = NM.sim.MODELS[simSpec.model], params = NM.sim.clean({ model: simSpec.model, params: simSpec.params }).params;
       const { stops, extent } = NM.sim.approach(m, params, simSpec.target, raw.length, holdIndex(raw, simSpec.target));
-      sims = raw.map((s, i) => ({ model: simSpec.model, params, from: stops[i], to: stops[i + 1], extent, ease: 'physical', readout: true, unit: simSpec.unit, time: simSpec.time }));
+      const hold = holdIndex(raw, simSpec.target), cams = NM.sim.cameraChain(raw.length, hold < raw.length ? hold : -1);
+      sims = raw.map((s, i) => ({ model: simSpec.model, params, from: stops[i], to: stops[i + 1], extent, ease: 'physical', readout: true, unit: simSpec.unit, time: simSpec.time, camera: cams[i] }));
     }
     const existing = JSON.parse(JSON.stringify(base)), id = Date.now().toString(36);
     const reel = mode !== 'full';
@@ -198,7 +199,7 @@ window.NM = window.NM || {};
         speechText: (s.speech ?? [readable(s.question), s.equation ? '\u2066' + texText(s.equation) + '\u2069' : ''].filter(Boolean).join(' — ')).slice(0, 4000),
         duration: Math.round(s.duration * 2) / 2, qAt: reel ? 4 : 6, eAt: s.question ? (reel ? 12 : 30) : 6, aAt: 80, equationAnimDuration: reel ? 22 : 30,
         ...layout,
-        titleBg: s.result ? 'rounded' : 'none', titleBgColor: '#f4d96c', questionBg: 'none', equationAnim: 'morph',
+        titleBg: s.result ? 'rounded' : 'none', titleBgColor: '#f4d96c', questionBg: 'none', equationAnim: 'morph', transition: 'slide',
         ...(sims ? { sim: sims[i] } : {})
       }))
     };
