@@ -149,7 +149,7 @@ window.NM=window.NM||{};
  function init(api){bridge=api;
   $('nmGeoAdd').addEventListener('click',()=>{if(bridge.playing())return;const g=projectScene().mathStudio;if(g.geometry.length>=30){bridge.status('الحد الأقصى 30 شكلاً في المشهد');return}const type=$('nmGeoType').value;g.geometry.push(geoClean({type,x:.5,y:.5,size:185}));geoSelected=g.geometry.length-1;bridge.commit();refreshGeometry()});
   $('nmGeoSelect').addEventListener('change',e=>{geoSelected=Number(e.target.value)||0;refreshGeometry()});
-  $('nmGeoDelete').addEventListener('click',()=>{if(bridge.playing())return;const g=projectScene().mathStudio;if(!g.geometry.length||!confirm('حذف الشكل المحدد؟'))return;g.geometry.splice(geoSelected,1);geoSelected=Math.max(0,geoSelected-1);geoMode=false;bridge.commit();refreshGeometry()});
+  $('nmGeoDelete').addEventListener('click',async()=>{if(bridge.playing())return;const g=projectScene().mathStudio;if(!g.geometry.length||!await NM.ask('حذف الشكل المحدد؟',{ok:'حذف الشكل',danger:true})||g!==projectScene().mathStudio)return;g.geometry.splice(geoSelected,1);geoSelected=Math.max(0,geoSelected-1);geoMode=false;bridge.commit();refreshGeometry()});
   $('nmGeoMove').addEventListener('click',()=>{geoMode=!geoMode;if(geoMode)pen=false;refresh();bridge.status(geoMode?'المس الشكل واسحبه في المعاينة':'انتهى تحريك الشكل')});
   for(const id of ['nmGeoSize','nmGeoRotation','nmGeoColor','nmGeoLabel','nmGeoStart','nmGeoEnd','nmGeoMeasure'])$(id).addEventListener('change',updateGeo);
 
@@ -157,7 +157,7 @@ window.NM=window.NM||{};
   ids.forEach(id=>{const el=$(id);if(el)el.addEventListener(el.type==='checkbox'?'change':id==='nmMathSteps'||id==='nmGraphFormula'?'change':'change',apply)});
   $('nmPenToggle').addEventListener('click',()=>{pen=!pen;if(pen)geoMode=false;refresh();bridge.status(pen?'القلم مفعل: ارسم داخل معاينة الفيديو، ثم أوقفه للعودة للتحرير.':'تم إيقاف القلم')});
   $('nmPenUndo').addEventListener('click',()=>{const g=projectScene().mathStudio;if(!g.strokes.length)return;g.strokes.pop();bridge.commit()});
-  $('nmPenClear').addEventListener('click',()=>{const g=projectScene().mathStudio;if(!g.strokes.length||!confirm('حذف جميع خطوط القلم من هذا المشهد؟'))return;g.strokes=[];bridge.commit()});
+  $('nmPenClear').addEventListener('click',async()=>{const g=projectScene().mathStudio;if(!g.strokes.length||!await NM.ask('حذف جميع خطوط القلم من هذا المشهد؟',{ok:'حذف الخطوط',danger:true})||g!==projectScene().mathStudio)return;g.strokes=[];bridge.commit()});
   $('nmPenColor').addEventListener('change',e=>{penColor=PEN_COLORS.includes(e.target.value)?e.target.value:PEN_COLORS[0]});
   $('nmPenSize').addEventListener('input',e=>penSize=clamp(e.target.value,2,24,7));
   refresh();

@@ -6,6 +6,7 @@ const ASSETS = [
  "./",
  "./KaTeX_AMS-Regular.woff2",
  "./chalk-reels.js",
+ "./ask.js",
  "./chalk-ruqaa-700.woff2",
  "./chalk-ruqaa-400.woff2",
  "./chalk-caveat-700.woff2",

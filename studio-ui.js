@@ -51,7 +51,6 @@
  const quick=(id,label,action,cls)=>{
    const b=document.createElement('button');b.type='button';b.id=id;b.textContent=label;if(cls)b.className=cls;b.addEventListener('click',action);toolbar.append(b);return b;
  };
- quick('studioScenes','▦ المشاهد',()=>setView('scenes'),'secondary');
  quick('studioAdd','＋ مشهد',()=>{$('add')?.click();setView('content')},'secondary');
  quick('studioExport','⇩ تصدير الفيديو',()=>{$('export')?.click()},'studio-export');
  // Studio 0.16: single-entry quick tools, routed to the existing tested editor actions.

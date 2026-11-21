@@ -283,7 +283,7 @@ window.NM = window.NM || {};
     const book = () => data.books.find(b => b.id === bookSel.value);
     const lesson = () => book()?.lessons.find(l => l.id === lessonSel.value);
     const key = () => `${bookSel.value}/${exSel.value}`;
-    function fillLessons() { lessonSel.replaceChildren(); for (const l of book().lessons) lessonSel.append(el('option', { value: l.id, textContent: `[${l.num}] ${l.title} — ${l.examples.length} مثال` })); fillExamples(); }
+    function fillLessons() { lessonSel.replaceChildren(); for (const l of book().lessons) lessonSel.append(el('option', { value: l.id, textContent: `\u2066[${l.num}]\u2069 ${l.title} — ${l.examples.length} مثال` })); fillExamples(); }
     function fillExamples() { exSel.replaceChildren(); for (const e of lesson().examples) exSel.append(el('option', { value: e.key, textContent: `مثال ${e.num} · ص ${e.page}${e.title ? ' — ' + e.title : ''}${SIMS[`${bookSel.value}/${e.key}`] ? ' 🎬' : ''}` })); describe(); }
     function describe() {
       const f = findExample(key()); if (!f) { info.textContent = ''; return; }
@@ -306,8 +306,7 @@ window.NM = window.NM || {};
       if (NM.core.busy()) { info.textContent = 'أوقف التشغيل أو التصدير أولاً.'; return; }
       if (modeSel.value === 'chalk' && !NM.chalk?.forKey(key())) { info.textContent = 'ريلز السبورة متاح حالياً لمثالي السلم (4 ص 94) والمرشح المخروطي (5 ص 95).'; return; }
       let project; try { project = modeSel.value === 'chalk' ? NM.chalk.build(NM.core.getState(), NM.chalk.forKey(key())) : modeSel.value === 'lesson' ? buildLesson(NM.core.getState(), `${bookSel.value}/${lessonSel.value}`) : buildProject(NM.core.getState(), key(), modeSel.value); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; return; }
-      if (!confirm('سيُنشأ مشروع جديد لهذا المثال، ويبقى المشروع الحالي محفوظاً في «🏠 مشاريعي». متابعة؟')) return;
-      try { NM.loadProject(project, `تم إنشاء ${project.scenes.length} مشهداً من الكتاب. راجع المعادلات قبل التصدير.`); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; }
+      try { NM.loadProject(project, `تم إنشاء ${project.scenes.length} مشهداً من الكتاب في مشروع جديد (السابق محفوظ في «🏠 مشاريعي»). راجع المعادلات قبل التصدير.`); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; }
     };
     const field = (t, i) => el('label', { className: 'nm-sim-field' }, t, i);
     box.append(el('h3', { textContent: '📚 أمثلة الكتاب (Math-books)' }),

@@ -313,9 +313,9 @@
         b.type = "button";
         b.className = "secondary";
         b.textContent = "استعادة";
-        b.onclick = () => {
+        b.onclick = async () => {
           if (busyGuard()) return;
-          if (!confirm("استعادة هذه النسخة؟ يمكنك التراجع (↶) إن غيّرت رأيك.")) return;
+          if (!await window.NM.ask("استعادة هذه النسخة؟ يمكنك التراجع (↶) إن غيّرت رأيك.", { ok: "استعادة" }) || busyGuard()) return;
           commit();
           hist.undo.push(hist.committed);
           hist.redo = [];
@@ -342,7 +342,7 @@
       renderLibrary();
     }
     async function deleteProject(it) {
-      if (!confirm(`حذف المشروع «${it.name}» مع أصواته ونسخه الاحتياطية نهائياً؟`)) return;
+      if (!await window.NM.ask(`حذف المشروع «${it.name}» مع أصواته ونسخه الاحتياطية نهائياً؟`, { ok: "حذف نهائي", danger: true })) return;
       try {
         await lib.remove(it.id);
         await clips.removeKeys(await clips.keys("project:" + it.id + ":"));

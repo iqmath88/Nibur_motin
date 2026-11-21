@@ -284,13 +284,13 @@
   $("autoTopic").addEventListener("change", syncHint);
   syncHint();
 
-  btn.addEventListener("click", () => {
+  btn.addEventListener("click", async () => {
     const status = $("autoStatus");
     try {
       const generated = build();
       const current = window.NM?.project;
       if (!current || !window.NM.loadProject) throw Error("المحرر لم يكتمل تحميله بعد؛ أعد المحاولة");
-      if (!confirm(`سيستبدل المولّد مشاهد المشروع الحالي بـ ${generated.scenes.length} مشاهد (يحتفظ بالتصميم والهوية والموسيقى). احفظ نسخة JSON أولاً إن أردت. متابعة؟`))
+      if (!await NM.ask(`سيستبدل المولّد مشاهد المشروع الحالي بـ ${generated.scenes.length} مشاهد (يحتفظ بالتصميم والهوية والموسيقى). احفظ نسخة JSON أولاً إن أردت. متابعة؟`, { ok: "استبدال المشاهد" }))
         return;
       // Keep project-level settings (theme, branding, fonts, captions, music) — replace only name and scenes.
       window.NM.loadProject(

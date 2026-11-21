@@ -3,7 +3,7 @@
  * قسم «ابدأ» بثلاث خطوات: اختر مثالاً ← سجّل صوتك ← صدّر. لا يكرر أي منطق: ينقل لوحة «أمثلة الكتاب»
  * إلى الخطوة الأولى، ويفتح استوديو التسجيل، ويضغط زر التصدير الأصلي.
  * «الوضع البسيط» يخفي الأدوات المتقدمة فقط (تبويبا العناصر والحركة وشريط الإدراج)؛ لا شيء يُحذف،
- * وزر «كل الأدوات» يعيدها. التفضيل محفوظ في هذا المتصفح.
+ * وزر «كل الأدوات» في شريط الأدوات (واحد فقط) يعيدها. التفضيل محفوظ في هذا المتصفح.
  */
 'use strict';
 window.NM = window.NM || {};
@@ -35,12 +35,10 @@ window.NM = window.NM || {};
     const exp = el('button', { type: 'button', className: 'nm-qp-main', textContent: '⇩ تصدير الفيديو' });
     exp.onclick = () => { $('export')?.click(); };
     s3.body.append(el('div', { className: 'actions' }, play, exp));
-    const toggle = el('button', { type: 'button', className: 'secondary nm-qp-toggle' });
-    toggle.onclick = () => setSimple(!document.body.classList.contains('nm-simple'));
     host.replaceChildren(
-      el('div', { className: 'nm-qp-intro' }, el('strong', { textContent: 'فيديو من الكتاب في ثلاث خطوات' }), toggle),
+      el('div', { className: 'nm-qp-intro' }, el('strong', { textContent: 'فيديو من الكتاب في ثلاث خطوات' })),
       s1.box, s2.box, s3.box);
-    ui = { s1, s2, s3, toggle, rec };
+    ui = { s1, s2, s3, rec };
     adoptLibrary();
   }
 
@@ -70,8 +68,7 @@ window.NM = window.NM || {};
 
   function setSimple(on) {
     document.body.classList.toggle('nm-simple', on); store.set(on ? '1' : '0');
-    if (ui) ui.toggle.textContent = on ? '⚙ إظهار كل الأدوات' : '✨ الوضع البسيط';
-    const extra = $('nmSimpleToggle'); if (extra) extra.textContent = on ? '⚙ كل الأدوات' : '✨ بسيط';
+    const extra = $('nmSimpleToggle'); if (extra) { extra.textContent = on ? '⚙ كل الأدوات' : '✨ الوضع البسيط'; extra.title = on ? 'إظهار تبويبات العناصر والحركة وشريط الإدراج' : 'إخفاء الأدوات المتقدمة'; extra.setAttribute('aria-pressed', String(on)); }
     // Leaving a hidden tab in simple mode: go to «ابدأ».
     const view = document.body.dataset.studioView;
     if (on && (view === 'elements' || view === 'motion' || view === 'advanced')) document.querySelector('[data-mobile-tab=start]')?.click();

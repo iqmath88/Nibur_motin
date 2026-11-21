@@ -83,12 +83,12 @@ window.NM=window.NM||{};
     const b=document.createElement('button');
     b.type='button';b.id='nmConeGenerate';b.textContent='💧 إنشاء فيديو المخروط السينمائي (6 مشاهد)';
     b.style.cssText='width:100%;margin-top:12px;padding:12px;min-height:46px';
-    b.addEventListener('click',()=>{
-      if(!NM.core||!NM.loadProject){alert('المحرر غير جاهز');return}
-      if(NM.core.busy()){alert('أوقف التشغيل أو التصدير أولاً');return}
-      if(!confirm('سيُستبدل المشروع الحالي بمثال المخروط. احفظ نسخة احتياطية أولاً. متابعة؟'))return;
+    b.addEventListener('click',async()=>{
+      if(!NM.core||!NM.loadProject){NM.core?.status?.('المحرر غير جاهز بعد');return}
+      if(NM.core.busy()){NM.core.status('أوقف التشغيل أو التصدير أولاً');return}
+      if(!await NM.ask('سيُستبدل المشروع الحالي بمثال المخروط. احفظ نسخة احتياطية أولاً. متابعة؟',{ok:'استبدال المشروع',danger:true})||NM.core.busy())return;
       try{NM.loadProject(build(NM.core.getState()),'تم إنشاء مشاهد المخروط الستة. راجع المعادلات قبل التصدير.')}
-      catch(e){alert('تعذر الإنشاء: '+e.message)}
+      catch(e){NM.core.status('تعذر الإنشاء: '+e.message)}
     });
     panel.appendChild(b);
   }
