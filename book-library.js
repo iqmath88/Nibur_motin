@@ -28,6 +28,20 @@ window.NM = window.NM || {};
     .replace(/\s+/g, ' ').trim();
   const speak = t => String(t || '').replace(/\*\*/g, '').replace(/\[\[[a-z]+:([^\]]*)\]\]/g, '$1')
     .replace(/\$([^$]+)\$/g, (m, x) => ' ' + (NM.speechFromMath ? NM.speechFromMath(x) : x) + ' ').replace(/\s+/g, ' ').trim();
+  /** TeX → readable Unicode text for a human reader (teleprompter, narration script). Math runs are LTR-isolated. */
+  function texText(tex) {
+    let t = String(tex || '');
+    for (let k = 0; k < 4; k++) t = t.replace(/\\(?:c[a-z]{1,3}|mark|text|mathrm|textbf|mathbf|operatorname)\{([^{}]*)\}/g, '$1');
+    const frac = /\\[dt]?frac\s*(?:\{([^{}]*)\}|(\d))\s*(?:\{([^{}]*)\}|(\d|[a-z]))/;
+    for (let k = 0; k < 6 && frac.test(t); k++) t = t.replace(frac, (m, a, a1, b, b1) => { const A = a ?? a1, B = b ?? b1; return `${/^[\w.]+$/.test(A) ? A : '(' + A + ')'}/${/^[\w.]+$/.test(B) ? B : '(' + B + ')'}`; });
+    const sup = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻', 'n': 'ⁿ' };
+    t = t.replace(/\^\{([0-9n-]+)\}|\^([0-9n])/g, (m, a, b) => [...(a ?? b)].map(c => sup[c] || c).join(''));
+    const map = { pi: 'π', theta: 'θ', alpha: 'α', beta: 'β', cdot: '·', times: '×', div: '÷', Rightarrow: '⇒', Leftrightarrow: '⇔', therefore: '∴', because: '∵', approx: '≈', ne: '≠', neq: '≠', le: '≤', leq: '≤', ge: '≥', geq: '≥', pm: '±', infty: '∞', to: '→', ldots: '…', cdots: '⋯', in: '∈', sqrt: '√' };
+    t = t.replace(/\\left|\\right|\\big|\\Big/g, '').replace(/\\[,;:! ]|\\quad|\\qquad|~/g, ' ').replace(/\\([A-Za-z]+)/g, (m, w) => map[w] ?? (/^(sin|cos|tan|cot|sec|csc|ln|log|lim|exp|max|min|arcsin|arccos|arctan|sinh|cosh)$/.test(w) ? w + ' ' : ''));
+    t = t.replace(/[{}]/g, '').replace(/&/g, '').replace(/\s+/g, ' ').trim();
+    return t;
+  }
+  const readable = q => String(q || '').replace(/\\\((.*?)\\\)/g, (m, x) => '⁦' + texText(x) + '⁩');
   /** Split a long question at a comma or space outside \( … \), so each scene stays readable. */
   function chunks(text) {
     const out = []; let rest = text;
@@ -144,7 +158,7 @@ window.NM = window.NM || {};
       scenes: raw.map((s, i) => ({
         id: `book-${id}-${i + 1}`,
         title: s.title, question: s.question, equation: s.equation, answer: '',
-        speechText: [s.title !== raw[i - 1]?.title ? s.title : '', speak(s.question.replace(/\\\(|\\\)/g, '$')), s.equation && NM.speechFromMath ? NM.speechFromMath(s.equation) : ''].filter(Boolean).join('. ').slice(0, 4000),
+        speechText: [readable(s.question), s.equation ? '\u2066' + texText(s.equation) + '\u2069' : ''].filter(Boolean).join(' — ').slice(0, 4000),
         duration: Math.round(s.duration * 2) / 2, qAt: 6, eAt: s.question ? 35 : 10, aAt: 80,
         ...layout,
         titleBg: s.result ? 'rounded' : 'none', titleBgColor: '#f4d96c', questionBg: 'none', equationAnim: 'fade',
@@ -192,6 +206,7 @@ window.NM = window.NM || {};
       field('الكتاب والفصل', bookSel), field('الدرس', lessonSel), field('المثال', exSel), el('div', { className: 'actions' }, btn), info);
     panel.insertBefore(box, document.getElementById('nmSimGenerator') || null);
   }
+  NM.texText = texText; NM.readableText = readable;
   NM.bookLibrary = { SIMS, scenesFor, buildProject, findExample, init, _expand: expand, _chunks: chunks };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0)); else setTimeout(init, 0);
   document.addEventListener('nm:core-ready', init);

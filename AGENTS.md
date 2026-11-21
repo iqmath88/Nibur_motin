@@ -10,6 +10,7 @@
 - `sim-engine.js`: محرك المحاكاة الرياضية (مخروط، وخزان، وصفيحة، وسلم، وظل، ومكعب جليدي). الحقل `sim` في المشهد، والرسم دالة في (المعطيات، والقيمة) فقط.
 - `book-library.js`: يحوّل مثالاً من Math-books إلى مشاهد، ويضيف المحاكاة للأمثلة المرتبطة بنموذج (الجدول `SIMS`).
 - `book-examples.js`: بيانات مولَّدة من مستودع Math-books. **لا تعدّله يدوياً**؛ أعد توليده: `node book-import.cjs <مسار Math-books>`. الأداة `book-import.cjs` لا يحمّلها التطبيق.
+- `voice-booth.js`: استوديو التسجيل: تسجيل بشري واحد متصل لكل المشاهد مع ملقّن، يُقص عند حدود المشاهد ويُحذف صمته ويُضبط مستواه. يستعمل `NM.core.preview` و`NM.core.setVoice`.
 - `studio-ui.js`: تنظيم الواجهة في خمسة أقسام، ولوحة الهاتف السفلية.
 - `audiomix.js` و`captions.js` و`overlays.js` و`mathanim.js` و`math-studio.js` و`free-editor.js` و`timeline-editor.js` و`question-composer.js` و`fonts.js`: وحدات مستقلة.
 - مكتبات خارجية محلية في الجذر: `mathjax-tex-svg.js` و`mathjax-color.js` و`mathlive.min.js` (مع خطوط `KaTeX_*.woff2` وأصوات `*.wav`) و`mp4-muxer.js` و`fflate.min.js`. **لا تعيدها إلى CDN، ولا تنقلها إلى مجلدات فرعية.**
