@@ -10,6 +10,7 @@
  const nav=document.querySelector('.mobile-bottom-nav');
  const head=$('mobileSheet');
  if(!editor||!scenes||!preview||!nav||!head)return;
+ const shortLabels={start:'ابدأ',content:'المحتوى',elements:'العناصر',motion:'الحركة',audio:'الصوت',scenes:'المشاهد',advanced:'متقدم'};
  const labels={start:'ابدأ: فيديو في ثلاث خطوات',content:'المحتوى والسؤال',elements:'العناصر والرسوم',motion:'الحركة والخط الزمني',audio:'الصوت والتعليق',scenes:'المشاهد والمشروع',advanced:'إعدادات متقدمة'};
  // Move only UI nodes; app.js and specialist modules resolve elements by their stable IDs.
  const free=$('freeEditor'); const timeline=$('nmTimelineEditor');
@@ -91,7 +92,7 @@
    setPeek(false);
    document.body.dataset.studioView=mode;
    document.body.classList.toggle('studio-drawer-open',media.matches);
-   $('mobileSheetTitle').textContent=labels[mode];
+   $('mobileSheetTitle').textContent=media.matches?shortLabels[mode]:labels[mode];
    head.hidden=!media.matches;
    strong.textContent=labels[mode];
    more.hidden=mode==='advanced';

@@ -129,6 +129,18 @@ window.NM = window.NM || {};
     const list = $('scenes'); if (list) new MutationObserver(refresh).observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     const wait = setInterval(() => { if (NM.core) { clearInterval(wait); refresh(); } }, 200);
   }
-  NM.quickPath = { refresh, setSimple, openHome, closeHome };
+  /** After a project is created: bring step n into view and pulse it, so the next action is obvious. */
+  function focusStep(n) {
+    if (!ui) return; const s = ui['s' + n]; if (!s) return;
+    if (document.body.dataset.studioView !== 'start') goTab('start');
+    refresh();
+    setTimeout(() => {
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      s.box.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+      s.box.classList.remove('nm-qp-next'); void s.box.offsetWidth; s.box.classList.add('nm-qp-next');
+      setTimeout(() => s.box.classList.remove('nm-qp-next'), 2600);
+    }, 120);
+  }
+  NM.quickPath = { refresh, setSimple, openHome, closeHome, focusStep };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 50)); else setTimeout(init, 50);
 })(window.NM);

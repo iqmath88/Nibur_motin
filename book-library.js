@@ -306,7 +306,7 @@ window.NM = window.NM || {};
       if (NM.core.busy()) { info.textContent = 'أوقف التشغيل أو التصدير أولاً.'; return; }
       if (modeSel.value === 'chalk' && !NM.chalk?.forKey(key())) { info.textContent = 'ريلز السبورة متاح حالياً لمثالي السلم (4 ص 94) والمرشح المخروطي (5 ص 95).'; return; }
       let project; try { project = modeSel.value === 'chalk' ? NM.chalk.build(NM.core.getState(), NM.chalk.forKey(key())) : modeSel.value === 'lesson' ? buildLesson(NM.core.getState(), `${bookSel.value}/${lessonSel.value}`) : buildProject(NM.core.getState(), key(), modeSel.value); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; return; }
-      try { NM.loadProject(project, `تم إنشاء ${project.scenes.length} مشهداً من الكتاب في مشروع جديد (السابق محفوظ في «🏠 مشاريعي»). راجع المعادلات قبل التصدير.`); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; }
+      try { NM.loadProject(project, `تم إنشاء ${project.scenes.length} مشهداً من الكتاب في مشروع جديد (السابق محفوظ في «🏠 مشاريعي»). راجع المعادلات قبل التصدير.`); NM.quickPath?.focusStep?.(2); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; }
     };
     const field = (t, i) => el('label', { className: 'nm-sim-field' }, t, i);
     box.append(el('h3', { textContent: '📚 أمثلة الكتاب (Math-books)' }),

@@ -371,3 +371,27 @@ body.nm-landscape .nm-booth-preview{aspect-ratio:16/9;height:auto;width:min(48vw
 @keyframes nmAskIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.nm-ask{animation:none}}
 #stickerHint[hidden],.preview-sticker-actions[hidden]{display:none!important}
+
+/* v0.28.0 usability batch 2: readable text, 44px touch targets, phone tabs on one row, next-step cue */
+.header p{font-size:14px}.header .badge{font-size:13px}
+.studio-ready .inline-setting{min-height:44px;display:flex;align-items:center;gap:10px}
+.studio-ready input[type=checkbox]{width:22px;height:22px;flex:0 0 22px}
+.studio-ready input[type=range]{min-height:44px}
+.nm-track-handle{width:32px;min-width:32px;height:44px;min-height:44px}
+.nm-track-strip{height:50px}
+.studio-actions .nm-history-btn,.mobile-sheet-head .nm-history-btn{min-height:44px;min-width:44px}
+@media(max-width:760px){
+ .studio-ready .mobile-bottom-nav{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+ .studio-ready .mobile-bottom-nav button small{font-size:12px}
+ .studio-ready .mobile-sheet-head button{min-height:44px}
+ .studio-ready.studio-drawer-open .mobile-sheet-head:not([hidden]){height:54px}
+ .studio-ready.studio-drawer-open .editor-panel,.studio-ready.studio-drawer-open .scenes-panel{padding-top:64px}
+ .nm-track-handle{width:32px;height:46px}.nm-track-strip.nm-legacy-strip{height:53px}
+}
+.nm-qp-step.nm-qp-next{animation:nmQpNext 1.3s ease-in-out 2;border-color:#2f8fd0}
+@keyframes nmQpNext{0%,100%{box-shadow:0 0 0 0 #2f8fd000}50%{box-shadow:0 0 0 6px #2f8fd055}}
+@media (prefers-reduced-motion:reduce){.nm-qp-step.nm-qp-next{animation:none;box-shadow:0 0 0 4px #2f8fd055}}
+.studio-ready button,.studio-ready select,.studio-ready summary,.studio-ready .panel input:not([type=checkbox]):not([type=radio]):not([type=color]){min-height:44px}
+.nm-track-head,.nm-track-ruler span{font-size:12px}
+.studio-ready .studio-section-header button{min-height:44px!important}
+.nm-qp-step{scroll-margin-top:80px}@media(max-width:760px){.nm-qp-step{scroll-margin-top:66px}}
