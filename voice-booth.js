@@ -76,6 +76,7 @@ window.NM = window.NM || {};
     const prompt = el('div', { className: 'nm-booth-prompt', dir: 'rtl' });
     const meter = el('div', { className: 'nm-booth-meter' }, el('i'));
     const clock = el('div', { className: 'nm-booth-clock', textContent: '0:00' });
+    const take = el('p', { className: 'nm-booth-take', role: 'status' });
     const msg = el('p', { className: 'nm-booth-msg', role: 'status' });
     const big = el('button', { type: 'button', className: 'nm-booth-big', textContent: '● ابدأ التسجيل' });
     const retake = el('button', { type: 'button', className: 'secondary', textContent: '↺ أعِد هذا المشهد', disabled: true });
@@ -85,17 +86,17 @@ window.NM = window.NM || {};
     const one = el('input', { type: 'checkbox' }), fit = el('input', { type: 'checkbox', checked: true });
     const opts = el('div', { className: 'nm-booth-opts' },
       el('label', {}, one, ' مشهد واحد فقط (إعادة تسجيله)'),
-      el('label', {}, fit, ' مدة المشهد تتبع الصوت'));
+      el('label', {}, fit, ' مدة المشهد تتبع الصوت (تقصر وتطول معه)'));
     const box = el('div', { className: 'nm-booth', role: 'dialog', ariaModal: 'true', ariaLabel: 'استوديو التسجيل' },
       el('div', { className: 'nm-booth-head' }, el('strong', { textContent: '🎙️ استوديو التسجيل' }), counter, close),
       el('div', { className: 'nm-booth-body' },
-        el('div', { className: 'nm-booth-stage' }, preview, el('div', { className: 'nm-booth-live' }, meter, clock)),
+        el('div', { className: 'nm-booth-stage' }, preview, el('div', { className: 'nm-booth-live' }, meter, clock), take),
         el('div', { className: 'nm-booth-side' }, title, prompt, opts,
           el('div', { className: 'nm-booth-actions' }, big),
           el('div', { className: 'nm-booth-actions' }, prev, retake, cancel), msg)));
     const wrap = el('div', { className: 'nm-booth-backdrop', hidden: true }, box);
     document.body.append(wrap);
-    ui = { wrap, preview, counter, title, prompt, meter: meter.firstChild, clock, msg, big, retake, prev, cancel, close, one, fit };
+    ui = { wrap, preview, counter, title, prompt, meter: meter.firstChild, clock, take, msg, big, retake, prev, cancel, close, one, fit };
     close.onclick = () => closeBooth();
     cancel.onclick = () => stop(false);
     retake.onclick = () => { if (!session?.recording) return; session.segStart = session.now(); session.segScene = session.i; ui.msg.textContent = 'أعد قراءة المشهد من بدايته.'; };
@@ -159,6 +160,9 @@ window.NM = window.NM || {};
     let peak = 0; for (const v of d) peak = Math.max(peak, Math.abs(v - 128) / 128);
     ui.meter.style.width = Math.min(100, peak * 140) + '%'; ui.meter.className = peak > .92 ? 'hot' : '';
     ui.clock.textContent = '● ' + fmtT(session.now());
+    const over = el2 > s.duration;
+    ui.take.textContent = `هذا المشهد: ${el2.toFixed(1)} ث${over ? ` (أطول من ${s.duration} ث الحالية — لا مشكلة، المدة ستتمدد مع صوتك)` : ''}. التسجيل مفتوح بلا حد؛ خذ وقتك ثم اضغط «التالي».`;
+    ui.take.classList.toggle('over', over);
     requestAnimationFrame(loop);
   }
 
@@ -177,7 +181,7 @@ window.NM = window.NM || {};
     await done.catch(() => {});
     s.stream.getTracks().forEach(t => t.stop());
     session = null; ui.one.disabled = ui.fit.disabled = false; ui.retake.disabled = true; ui.big.disabled = false;
-    ui.clock.textContent = '0:00'; ui.meter.style.width = '0';
+    ui.clock.textContent = '0:00'; ui.meter.style.width = '0'; ui.take.textContent = '';
     if (!keep || !s.marks.length) { s.ac.close().catch(() => {}); ui.msg.textContent = 'أُلغي التسجيل، ولم يتغير شيء.'; show(); return; }
     ui.msg.textContent = 'جارٍ معالجة التسجيل…';
     try {
@@ -186,11 +190,13 @@ window.NM = window.NM || {};
       const x = mono(buf), sr = buf.sampleRate;
       const results = split(x, sr, s.marks);
       let saved = 0; const silent = [];
+      const long = [];
       for (const r of results) {
         if (!r.clip) { silent.push(s.ids.indexOf(r.id) + 1); continue; }
+        if (r.clip.seconds > 119) long.push(s.ids.indexOf(r.id) + 1);
         NM.core.setVoice(r.id, wav(r.clip.samples, sr), r.clip.seconds, s.fit); saved++;
       }
-      ui.msg.textContent = `حُفظ صوت ${saved} مشهداً${silent.length ? ` · لم يُلتقط كلام في المشهد ${silent.join('، ')}` : ''}. شغّل الفيديو للمعاينة، أو أعد تسجيل أي مشهد.`;
+      ui.msg.textContent = `حُفظ صوت ${saved} مشهداً، ومدة كل مشهد صارت بطول صوته${silent.length ? ` · لم يُلتقط كلام في المشهد ${silent.join('، ')}` : ''}${long.length ? ` · المشهد ${long.join('، ')} أطول من دقيقتين، فقُص عند 120 ث؛ قسّمه إلى مشهدين` : ''}. شغّل الفيديو للمعاينة، أو أعد تسجيل أي مشهد.`;
       cursor = Math.min(state().scenes.length - 1, s.i + (s.single ? 0 : 1));
     } catch (e) { ui.msg.textContent = 'تعذرت معالجة التسجيل: ' + e.message; }
     finally { s.ac.close().catch(() => {}); show(); }

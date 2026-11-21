@@ -673,7 +673,7 @@ NM.core={
  /** v0.19 recording booth: draw scene i at progress p without saving (no state change). */
  preview(i,p){if(playing||exporting)return;i=Math.max(0,Math.min(state.scenes.length-1,i));if(i!==index){index=i;selectedElement=null;drawControls()}clock=sceneStart(i)+state.scenes[i].duration*Math.max(0,Math.min(1,p));render(Math.max(0,Math.min(1,p)),{guides:false})},
  /** Attach a narration clip to a scene; when the scene follows its voice, its length becomes voice + tail. */
- setVoice(id,blob,dur,fit=true){const s=state.scenes.find(x=>x.id===id);if(!s||!blob?.size)return;setSceneAudio(blob,id);s.voiceDuration=bounded(dur,0,MAX_SCENE_DURATION,0);if(fit&&s.autoDuration)s.duration=Math.max(2,Math.min(MAX_SCENE_DURATION,Math.ceil((dur+.6)*2)/2));save();const i=state.scenes.indexOf(s);if(i===index){clock=sceneStart(i)+s.duration;syncSceneVoiceUI()}drawControls()},
+ setVoice(id,blob,dur,fit=true){const s=state.scenes.find(x=>x.id===id);if(!s||!blob?.size)return;setSceneAudio(blob,id);s.voiceDuration=bounded(dur,0,MAX_SCENE_DURATION,0);const need=Math.ceil((dur+.6)*2)/2;if(fit&&s.autoDuration)s.duration=Math.max(2,Math.min(MAX_SCENE_DURATION,need));else if(s.duration<dur+.3)s.duration=Math.min(MAX_SCENE_DURATION,need);/* the voice is never cut by the scene length */save();const i=state.scenes.indexOf(s);if(i===index){clock=sceneStart(i)+s.duration;syncSceneVoiceUI()}drawControls()},
  hasVoice:id=>voiceBlobs.has(id),
  restore(snapshot){
   if(playing||exporting)throw Error('أوقف التشغيل أو التصدير أولاً');

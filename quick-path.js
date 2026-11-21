@@ -64,7 +64,8 @@ window.NM = window.NM || {};
     mark(ui.s1, fromBook, fromBook ? `المشروع الحالي: ${st.name || ''} — ${ids.length} مشهداً، نحو ${secs} ث.` : 'المشروع الحالي ليس من أمثلة الكتاب. يمكنك المتابعة به أيضاً.');
     mark(ui.s2, ids.length > 0 && voiced === ids.length, voiced ? `سُجّل صوت ${voiced} من ${ids.length} مشهداً.${voiced < ids.length ? ' سيبدأ الاستوديو من أول مشهد بلا صوت.' : ''}` : 'لا يوجد صوت مسجّل بعد.');
     ui.rec.textContent = voiced && voiced < ids.length ? '🎙️ أكمل التسجيل' : voiced ? '🎙️ أعد تسجيل مشهد' : '🎙️ افتح استوديو التسجيل';
-    mark(ui.s3, false, voiced < ids.length && ids.length ? 'يمكنك التصدير الآن، لكن المشاهد بلا صوت ستكون صامتة.' : 'جاهز للتصدير.');
+    const cut = st.scenes.map((x, i) => NM.core.hasVoice(x.id) && (+x.voiceDuration || 0) > x.duration + .05 ? i + 1 : 0).filter(Boolean);
+    mark(ui.s3, false, cut.length ? `تنبيه: صوت المشهد ${cut.join('، ')} أطول من مدته وسيُقص. أطِل المدة أو فعّل «ضبط المدة تلقائياً».` : voiced < ids.length && ids.length ? 'يمكنك التصدير الآن، لكن المشاهد بلا صوت ستكون صامتة.' : 'جاهز للتصدير.');
   }
 
   function setSimple(on) {
@@ -76,8 +77,54 @@ window.NM = window.NM || {};
     if (on && (view === 'elements' || view === 'motion' || view === 'advanced')) document.querySelector('[data-mobile-tab=start]')?.click();
   }
 
+  // ---------- «مشاريعي»: شاشة رئيسية للخروج من المشروع الحالي وفتح غيره ----------
+  let homeUi = null;
+  function goTab(tab) { document.querySelector(`[data-mobile-tab=${tab}]`)?.click(); }
+  function buildHome() {
+    if (homeUi) return homeUi;
+    const close = el('button', { type: 'button', className: 'secondary', textContent: '✕ متابعة المشروع الحالي' });
+    const fromBook = el('button', { type: 'button', className: 'primary', textContent: '📚 فيديو جديد من أمثلة الكتاب' });
+    const blank = el('button', { type: 'button', className: 'secondary', textContent: '＋ مشروع فارغ' });
+    const pack = el('button', { type: 'button', className: 'secondary', textContent: '📂 فتح حزمة .nibor' });
+    const listHost = el('div', { className: 'nm-home-list' }), current = el('p', { className: 'muted' });
+    const box = el('div', { className: 'nm-home', role: 'dialog', ariaModal: 'true', ariaLabel: 'مشاريعي', hidden: true },
+      el('div', { className: 'nm-home-inner' },
+        el('div', { className: 'nm-home-head' }, el('h2', { textContent: '🏠 مشاريعي' }), close),
+        current,
+        el('div', { className: 'nm-home-new' }, fromBook, blank, pack),
+        el('h3', { textContent: 'المشاريع المحفوظة على هذا الجهاز' }), listHost,
+        el('p', { className: 'muted', textContent: 'كل مشروع يُحفظ تلقائياً مع أصواته. الخروج من المشروع لا يحذف شيئاً.' })));
+    document.body.append(box);
+    // The library list is rendered by project-store.js into #nmProjectList; show that same element here.
+    const list = $('nmProjectList');
+    const anchor = el('p', { className: 'muted' }, el('button', { type: 'button', className: 'secondary', textContent: '🏠 افتح شاشة مشاريعي', onclick: () => openHome() }));
+    if (list) { list.replaceWith(anchor); listHost.append(list); }
+    const start = tab => { if (!NM.core || NM.core.busy()) return; $('nmNewProject')?.click(); setTimeout(() => { closeHome(); goTab(tab); refresh(); }, 400); };
+    // Generating from the book always creates a new project (new id); the current one stays in the library.
+    fromBook.onclick = () => { closeHome(); goTab('start'); $('nmBookLibrary')?.scrollIntoView({ block: 'start' }); };
+    blank.onclick = () => { setSimple(false); start('content'); };
+    pack.onclick = () => { $('nmPackImport')?.click(); };
+    $('nmPackFile')?.addEventListener('change', () => setTimeout(() => { closeHome(); goTab('start'); refresh(); }, 800));
+    close.onclick = closeHome;
+    listHost.addEventListener('click', e => { const b = e.target.closest('button'); if (b && b.textContent === 'فتح') setTimeout(() => { closeHome(); goTab('start'); refresh(); }, 700); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !box.hidden) closeHome(); });
+    homeUi = { box, current };
+    return homeUi;
+  }
+  function openHome() {
+    if (!NM.core) return;
+    if (NM.core.busy()) { NM.core.status('أوقف التشغيل أو التصدير أولاً'); return; }
+    const h = buildHome(), st = NM.core.getState();
+    h.current.textContent = `المفتوح الآن: ${st.name || 'مشروع بلا اسم'} (${st.scenes.length} مشهداً). محفوظ تلقائياً.`;
+    NM.store?.renderLibrary?.(); h.box.hidden = false;
+  }
+  function closeHome() { if (homeUi) homeUi.box.hidden = true; }
+
   function init() {
     build(); if (!ui) return;
+    const header = document.querySelector('.header');
+    if (header && !$('nmHomeButton')) { header.append(el('button', { type: 'button', id: 'nmHomeButton', className: 'secondary nm-home-btn', textContent: '🏠 مشاريعي', onclick: openHome })); const sub = header.querySelector('p'); if (sub) sub.textContent = 'اختر مثالاً ← سجّل صوتك ← صدّر'; }
+    buildHome();
     const tb = document.querySelector('.studio-actions');
     if (tb && !$('nmSimpleToggle')) { const b = el('button', { type: 'button', id: 'nmSimpleToggle', className: 'secondary' }); b.onclick = () => setSimple(!document.body.classList.contains('nm-simple')); tb.append(b); }
     const saved = store.get(); setSimple(saved == null ? true : saved === '1');
@@ -85,6 +132,6 @@ window.NM = window.NM || {};
     const list = $('scenes'); if (list) new MutationObserver(refresh).observe(list, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     const wait = setInterval(() => { if (NM.core) { clearInterval(wait); refresh(); } }, 200);
   }
-  NM.quickPath = { refresh, setSimple };
+  NM.quickPath = { refresh, setSimple, openHome, closeHome };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 50)); else setTimeout(init, 50);
 })(window.NM);

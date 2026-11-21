@@ -237,7 +237,7 @@ window.NM = window.NM || {};
       if (!NM.core || !NM.loadProject) { info.textContent = 'المحرر غير جاهز بعد.'; return; }
       if (NM.core.busy()) { info.textContent = 'أوقف التشغيل أو التصدير أولاً.'; return; }
       let project; try { project = buildProject(NM.core.getState(), key(), modeSel.value); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; return; }
-      if (!confirm('سيُستبدل المشروع الحالي بمشاهد المثال. يمكنك التراجع، أو حفظ نسخة احتياطية أولاً. متابعة؟')) return;
+      if (!confirm('سيُنشأ مشروع جديد لهذا المثال، ويبقى المشروع الحالي محفوظاً في «🏠 مشاريعي». متابعة؟')) return;
       try { NM.loadProject(project, `تم إنشاء ${project.scenes.length} مشهداً من الكتاب. راجع المعادلات قبل التصدير.`); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; }
     };
     const field = (t, i) => el('label', { className: 'nm-sim-field' }, t, i);
