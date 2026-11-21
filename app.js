@@ -662,6 +662,11 @@ NM.core={
  /** A fresh project that keeps the current look (theme, branding, fonts, captions, overlays, audio settings). */
  blankProject(){return cleanProject({...JSON.parse(JSON.stringify(state)),projectId:makeSceneId(),name:'مشروع جديد',scenes:defaults.map(d=>({...d,id:makeSceneId()}))})},
  /** Replace state from a snapshot without resetting the scene position (undo/redo, restoring a backup). */
+ /** v0.19 recording booth: draw scene i at progress p without saving (no state change). */
+ preview(i,p){if(playing||exporting)return;i=Math.max(0,Math.min(state.scenes.length-1,i));if(i!==index){index=i;selectedElement=null;drawControls()}clock=sceneStart(i)+state.scenes[i].duration*Math.max(0,Math.min(1,p));render(Math.max(0,Math.min(1,p)),{guides:false})},
+ /** Attach a narration clip to a scene; when the scene follows its voice, its length becomes voice + tail. */
+ setVoice(id,blob,dur,fit=true){const s=state.scenes.find(x=>x.id===id);if(!s||!blob?.size)return;setSceneAudio(blob,id);s.voiceDuration=bounded(dur,0,MAX_SCENE_DURATION,0);if(fit&&s.autoDuration)s.duration=Math.max(2,Math.min(MAX_SCENE_DURATION,Math.ceil((dur+.6)*2)/2));save();const i=state.scenes.indexOf(s);if(i===index){clock=sceneStart(i)+s.duration;syncSceneVoiceUI()}drawControls()},
+ hasVoice:id=>voiceBlobs.has(id),
  restore(snapshot){
   if(playing||exporting)throw Error('أوقف التشغيل أو التصدير أولاً');
   const next=cleanProject(typeof snapshot==='string'?JSON.parse(snapshot):snapshot);
