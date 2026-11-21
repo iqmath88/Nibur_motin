@@ -1,0 +1,9 @@
+Nibor Cone v0.1 — Test report
+- Node.js syntax check: PASS (inline JS extracted and passed node --check).
+- Chromium headless via Playwright set_content: PASS, no pageerror at t=0,17,36,46,57 seconds.
+- Render screenshots visually checked at t=46 and t=57: math fractions and geometry rendered on canvas.
+- Geometry numeric check: at t=25.325454666959384 seconds, h=12; dh/dt = 1/(4*pi) cm/s.
+- WebM export: NOT TESTED.
+- Mobile Safari / Samsung Chrome: NOT TESTED.
+- Actual sound/voice-over and MP4: NOT IMPLEMENTED.
+- Integration with existing Nibor Motion project: NOT DONE, since full repository was not available for modification in the sandbox and GitHub connector declined a write branch (403).
