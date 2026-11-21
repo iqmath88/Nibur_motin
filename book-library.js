@@ -1,0 +1,198 @@
+/* Nibor Motion v0.18.0 — مكتبة أمثلة الكتاب (من مستودع Math-books).
+ *
+ * book-examples.js (يولّده book-import.cjs) يحمل نص الأمثلة وخطواتها كما في Math-books.
+ * هذه الوحدة تحوّل مثالاً واحداً إلى مشاهد: مشهد للمسألة، ثم مشهد لكل معادلة في الحل بالترتيب،
+ * وتضيف محاكاة رياضية للأمثلة التي لها نموذج في sim-engine.js، تثبت عند لحظة التعويض.
+ */
+'use strict';
+window.NM = window.NM || {};
+(function (NM) {
+  /** Examples with a simulation model. Givens copied from the book; Ht of the tank is a drawing assumption only. */
+  const SIMS = {
+    'g12c3/rates:rTank:1': { model: 'tank', params: { s: 2, Ht: 2.2, rate: -0.4 }, target: 1.2, unit: 'm', time: 'h', note: 'ارتفاع الخزان 2.2 m افتراض للرسم فقط؛ الجواب لا يعتمد عليه.' },
+    'g12c3/rates:rPlate:2': { model: 'plate', params: { A: 96, rate: 2 }, target: 12, unit: 'cm', time: 's' },
+    'g12c3/rates:rIce:3': { model: 'cube', params: { a: 8, rate: -6 }, target: 1, unit: 'cm', time: 's' },
+    'g12c3/rates:rLadder:4': { model: 'ladder', params: { L: 10, rate: 2 }, target: 8, unit: 'm', time: 's' },
+    'g12c3/rates:rCone:5': { model: 'cone', params: { H: 24, R: 8, inflow: 5, outflow: 1 }, target: 12, unit: 'cm', time: 's' }
+  };
+  const MAX_SCENES = 24, MAX_Q = 150;
+
+  // ---- text and TeX conversion ----
+  const inline = t => String(t || '')
+    .replace(/\*\*/g, '')
+    .replace(/\[\[[a-z]+:([^\]]*)\]\]/g, '$1')
+    // Part labels a) b) … and 1) 2) … become LTR math tokens, so they are not mirrored inside Arabic text.
+    .replace(/(^|\s)([a-e]|[1-9]|i{1,3}|iv)\)(?=\s)/g, (m, sp, l) => `${sp}\\(\\text{${l})}\\)`)
+    .replace(/\$([^$]+)\$/g, (m, x) => '\\(' + x.trim() + '\\)')
+    .replace(/\s+([.،:؛])/g, '$1')
+    .replace(/\s+/g, ' ').trim();
+  const speak = t => String(t || '').replace(/\*\*/g, '').replace(/\[\[[a-z]+:([^\]]*)\]\]/g, '$1')
+    .replace(/\$([^$]+)\$/g, (m, x) => ' ' + (NM.speechFromMath ? NM.speechFromMath(x) : x) + ' ').replace(/\s+/g, ' ').trim();
+  /** Split a long question at a comma or space outside \( … \), so each scene stays readable. */
+  function chunks(text) {
+    const out = []; let rest = text;
+    while (rest.length > MAX_Q) {
+      let punct = -1, space = -1, after = -1, depth = 0;
+      for (let i = 0; i < rest.length; i++) {
+        if (rest.startsWith('\\(', i)) depth++; else if (rest.startsWith('\\)', i)) depth--;
+        if (depth) continue;
+        if (i <= MAX_Q && i > 50 && '،.:؛'.includes(rest[i])) punct = i + 1;
+        if (i <= MAX_Q && rest[i] === ' ') space = i;
+        if (i > MAX_Q && rest[i] === ' ') { after = i; break; }
+      }
+      const cut = punct > 0 ? punct : space > 50 ? space : after;
+      if (cut <= 0) break;
+      out.push(rest.slice(0, cut).trim()); rest = rest.slice(cut).trim();
+    }
+    if (rest) out.push(rest);
+    return out;
+  }
+  /** Left side of the last relation, used when a book line continues with "= …". */
+  function lhs(tex) {
+    let depth = 0;
+    for (let i = 0; i < tex.length; i++) {
+      const ch = tex[i];
+      if (ch === '{' || ch === '(' || ch === '[') depth++; else if (ch === '}' || ch === ')' || ch === ']') depth--;
+      else if (ch === '=' && !depth) return tex.slice(0, i);
+    }
+    return '';
+  }
+  function cleanEq(tex) {
+    return String(tex || '')
+      .replace(/^\\text\{[a-e]\)\}\s*/, '').replace(/^[a-e]\)\\?\s*/, '')
+      .replace(/\\quad\\ldots\s*\(\d+\)\s*$/, '').replace(/\\;\s*$/, '').trim();
+  }
+  /** One book display line → one or more equation lines (aligned rows become separate steps). */
+  function expand(tex, prev) {
+    const t = cleanEq(tex), out = [];
+    const m = t.match(/\\begin\{aligned\}([\s\S]*)\\end\{aligned\}/);
+    const rows = m ? m[1].split(/\\\\/).map(r => r.replace(/&/g, '').trim()).filter(Boolean) : [t];
+    for (let r of rows) {
+      if (/^=/.test(r) && prev && lhs(prev)) r = lhs(prev) + r;
+      out.push(r); prev = r;
+    }
+    return out;
+  }
+
+  // ---- example → scenes ----
+  function findExample(key) {
+    const [bookId, exKey] = String(key).split('/');
+    const book = NM.bookData?.books.find(b => b.id === bookId); if (!book) return null;
+    for (const lesson of book.lessons) { const ex = lesson.examples.find(e => e.key === exKey); if (ex) return { book, lesson, ex }; }
+    return null;
+  }
+
+  function scenesFor(book, lesson, ex) {
+    const scenes = [], heading = `مثال ${ex.num || ''} · ص ${ex.page}`.replace('  ', ' ');
+    const push = (title, question, equation, result) => {
+      if (scenes.length >= MAX_SCENES) return;
+      const q = question || '', words = (q.replace(/\\\(.*?\\\)/g, ' س ').split(/\s+/).length);
+      scenes.push({ title, question: q, equation: equation || '', result: !!result, duration: Math.max(4, Math.min(12, 2.5 + words * .38 + (equation ? 2.5 : 0))) });
+    };
+    // Problem statement (the first step's text), split for readability.
+    const first = ex.steps[0], statement = first.items.filter(i => i.t === 'text' && !i.from).map(i => inline(i.v)).join(' ');
+    const parts = chunks(statement);
+    parts.forEach((part, i) => push(ex.title || heading, part, '', false));
+    let prevEq = '';
+    ex.steps.forEach((st, si) => {
+      const title = st.label || ex.title || heading;
+      let pending = '';
+      const items = si === 0 ? st.items.filter(i => !(i.t === 'text' && !i.from)) : st.items;
+      for (const it of items) {
+        if (it.t === 'text' || it.t === 'head') { const v = inline(it.v); if (v && !/^الحل:?$/.test(v)) pending = pending ? pending + ' ' + v : v; if (pending.length > MAX_Q) { const c = chunks(pending); c.slice(0, -1).forEach(x => push(title, x, '', false)); pending = c[c.length - 1]; } }
+        else if (it.t === 'let') {
+          const rows = it.rows.slice(0, 3).map(r => [inline(r[0]), r[1], r[2] && r[2].length < 45 ? inline(r[2]) : ''].filter(Boolean).join(' : '));
+          push(title, `${it.title || 'نفرض'}: ${rows.join(' · ')}`, '', false);
+        } else if (it.t === 'note') push('تنبيه على الكتاب', inline(it.v), '', false);
+        else if (it.t === 'eq') {
+          for (const row of expand(it.v, prevEq)) { push(title, pending, row, st.result); pending = ''; prevEq = row; }
+        }
+      }
+      if (pending) push(title, pending, '', st.result);
+    });
+    return scenes;
+  }
+
+  /** Index of the first scene that substitutes the target value — the simulation holds it from there. */
+  function holdIndex(scenes, target) {
+    const re = new RegExp(`(^|[^\\d.])${String(target).replace('.', '\\.')}([^\\d.]|$)`);
+    const i = scenes.findIndex((s, k) => k > 0 && re.test(s.equation));
+    return i > 0 ? i : scenes.length;
+  }
+
+  function buildProject(base, key) {
+    const found = findExample(key); if (!found) throw Error('المثال غير موجود في المكتبة');
+    const { book, lesson, ex } = found, raw = scenesFor(book, lesson, ex);
+    if (!raw.length) throw Error('لا توجد خطوات قابلة للتحويل في هذا المثال');
+    const simSpec = SIMS[key];
+    let sims = null;
+    if (simSpec && NM.sim) {
+      const m = NM.sim.MODELS[simSpec.model], params = NM.sim.clean({ model: simSpec.model, params: simSpec.params }).params;
+      const { stops, extent } = NM.sim.approach(m, params, simSpec.target, raw.length, holdIndex(raw, simSpec.target));
+      sims = raw.map((s, i) => ({ model: simSpec.model, params, from: stops[i], to: stops[i + 1], extent, ease: 'physical', readout: true, unit: simSpec.unit, time: simSpec.time }));
+    }
+    const existing = JSON.parse(JSON.stringify(base)), id = Date.now().toString(36);
+    const layout = sims
+      ? { titleY: 18, questionY: 27, equationY: 79, titleSize: 52, questionSize: 36, equationScale: 108 }
+      : { titleY: 24, questionY: 40, equationY: 62, titleSize: 54, questionSize: 42, equationScale: 120 };
+    return {
+      ...existing,
+      projectId: 'book-' + id,
+      name: `${book.title} · مثال ${ex.num} ص ${ex.page}${ex.title ? ' — ' + ex.title : ''}`.slice(0, 120),
+      theme: 'dark',
+      branding: { ...existing.branding, showHeader: true, showFooter: true, header: `${book.grade} · ${book.title} · [${lesson.num}]`, footer: `مثال ${ex.num} · ص ${ex.page} · Math-books` },
+      scenes: raw.map((s, i) => ({
+        id: `book-${id}-${i + 1}`,
+        title: s.title, question: s.question, equation: s.equation, answer: '',
+        speechText: [s.title !== raw[i - 1]?.title ? s.title : '', speak(s.question.replace(/\\\(|\\\)/g, '$')), s.equation && NM.speechFromMath ? NM.speechFromMath(s.equation) : ''].filter(Boolean).join('. ').slice(0, 4000),
+        duration: Math.round(s.duration * 2) / 2, qAt: 6, eAt: s.question ? 35 : 10, aAt: 80,
+        ...layout,
+        titleBg: s.result ? 'rounded' : 'none', titleBgColor: '#f4d96c', questionBg: 'none', equationAnim: 'fade',
+        ...(sims ? { sim: sims[i] } : {})
+      }))
+    };
+  }
+
+  // ---- UI ----
+  const el = (tag, props = {}, ...kids) => { const e = document.createElement(tag); Object.assign(e, props); for (const k of kids) e.append(k); return e; };
+  function init() {
+    const panel = document.getElementById('autoReelsPanel');
+    if (!panel || document.getElementById('nmBookLibrary') || !NM.bookData) return;
+    const data = NM.bookData;
+    const box = el('section', { id: 'nmBookLibrary', className: 'nm-sim-generator' });
+    const bookSel = el('select', { id: 'nmBookSelect' }), lessonSel = el('select', { id: 'nmLessonSelect' }), exSel = el('select', { id: 'nmExampleSelect' });
+    const info = el('p', { className: 'muted', role: 'status' }), btn = el('button', { type: 'button', id: 'nmBookGenerate', textContent: '📚 إنشاء فيديو المثال' });
+    for (const b of data.books) bookSel.append(el('option', { value: b.id, textContent: `${b.grade} · ${b.title}` }));
+    const book = () => data.books.find(b => b.id === bookSel.value);
+    const lesson = () => book()?.lessons.find(l => l.id === lessonSel.value);
+    const key = () => `${bookSel.value}/${exSel.value}`;
+    function fillLessons() { lessonSel.replaceChildren(); for (const l of book().lessons) lessonSel.append(el('option', { value: l.id, textContent: `[${l.num}] ${l.title} — ${l.examples.length} مثال` })); fillExamples(); }
+    function fillExamples() { exSel.replaceChildren(); for (const e of lesson().examples) exSel.append(el('option', { value: e.key, textContent: `مثال ${e.num} · ص ${e.page}${e.title ? ' — ' + e.title : ''}${SIMS[`${bookSel.value}/${e.key}`] ? ' 🎬' : ''}` })); describe(); }
+    function describe() {
+      const f = findExample(key()); if (!f) { info.textContent = ''; return; }
+      const n = Math.min(MAX_SCENES, scenesFor(f.book, f.lesson, f.ex).length), sim = SIMS[key()];
+      info.textContent = `${n} مشهداً${sim ? ' · مع محاكاة: ' + NM.sim.MODELS[sim.model].label + (sim.note ? ' — ' + sim.note : '') : ''}. النص والمعادلات من الكتاب كما في Math-books؛ راجعها قبل النشر.`;
+    }
+    bookSel.onchange = fillLessons; lessonSel.onchange = fillExamples; exSel.onchange = describe;
+    // Default to the related-rates lesson, example 5 p.95, when present.
+    if (data.books.some(b => b.id === 'g12c3')) bookSel.value = 'g12c3';
+    fillLessons();
+    if ([...lessonSel.options].some(o => o.value === 'rates')) { lessonSel.value = 'rates'; fillExamples(); }
+    if ([...exSel.options].some(o => o.value === 'rates:rCone:5')) { exSel.value = 'rates:rCone:5'; describe(); }
+    btn.onclick = () => {
+      if (!NM.core || !NM.loadProject) { info.textContent = 'المحرر غير جاهز بعد.'; return; }
+      if (NM.core.busy()) { info.textContent = 'أوقف التشغيل أو التصدير أولاً.'; return; }
+      let project; try { project = buildProject(NM.core.getState(), key()); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; return; }
+      if (!confirm('سيُستبدل المشروع الحالي بمشاهد المثال. يمكنك التراجع، أو حفظ نسخة احتياطية أولاً. متابعة؟')) return;
+      try { NM.loadProject(project, `تم إنشاء ${project.scenes.length} مشهداً من الكتاب. راجع المعادلات قبل التصدير.`); } catch (e) { info.textContent = 'تعذر الإنشاء: ' + e.message; }
+    };
+    const field = (t, i) => el('label', { className: 'nm-sim-field' }, t, i);
+    box.append(el('h3', { textContent: '📚 أمثلة الكتاب (Math-books)' }),
+      el('p', { className: 'muted', textContent: `${data.books.reduce((n, b) => n + b.lessons.reduce((m, l) => m + l.examples.length, 0), 0)} مثالاً محلولاً. اختر مثالاً فيُبنى فيديو بخطوات حله، و🎬 تعني أن له محاكاة متحركة.` }),
+      field('الكتاب والفصل', bookSel), field('الدرس', lessonSel), field('المثال', exSel), el('div', { className: 'actions' }, btn), info);
+    panel.insertBefore(box, document.getElementById('nmSimGenerator') || null);
+  }
+  NM.bookLibrary = { SIMS, scenesFor, buildProject, findExample, init, _expand: expand, _chunks: chunks };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(init, 0)); else setTimeout(init, 0);
+  document.addEventListener('nm:core-ready', init);
+})(window.NM);

@@ -303,3 +303,6 @@ body.studio-ready{background:#edf2f7;color:#182e46}
 .studio-ready .studio-quick-help{padding:12px 14px;margin:0 0 12px;border:1px solid var(--line,#d9e2eb);border-radius:12px;line-height:1.8;background:var(--surface,#f4f7fa)}
 .studio-ready .studio-quick-help[hidden]{display:none}
 @media(max-width:760px){.studio-ready .studio-insert-bar{gap:5px}.studio-ready .studio-insert-bar button{font-size:12px;padding:8px 5px;min-height:44px}.studio-ready.studio-drawer-open .studio-insert-bar,.studio-ready.studio-drawer-open .studio-quick-help{display:none}}
+
+/* v0.17.0 simulation engine */
+.nm-sim-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}.nm-sim-field{display:flex!important;flex-direction:column;gap:5px;min-width:0;margin:0!important}.nm-sim-field input:not([type=checkbox]),.nm-sim-field select{width:100%;min-height:44px;box-sizing:border-box;min-width:0}.nm-sim-field input[type=checkbox]{width:24px;height:24px}.nm-sim-generator{border-top:1px solid rgba(120,145,165,.3);margin-top:16px;padding-top:10px}.nm-sim-generator h3{font-size:16px;margin:6px 0}.nm-sim-generator>.nm-sim-field{margin:8px 0!important}@media(max-width:480px){.nm-sim-grid{grid-template-columns:1fr}}
