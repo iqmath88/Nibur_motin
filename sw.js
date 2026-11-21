@@ -30,6 +30,7 @@ const ASSETS = [
  "./cairo-arabic-700-normal.woff2",
  "./cairo-latin-700-normal.woff2",
  "./captions.js",
+ "./cone-cinematic.js",
  "./export-webcodecs.js",
  "./fflate.min.js",
  "./fonts.js",
