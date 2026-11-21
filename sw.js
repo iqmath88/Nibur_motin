@@ -32,6 +32,8 @@ const ASSETS = [
  "./captions.js",
  "./cone-cinematic.js",
  "./sim-engine.js",
+ "./book-examples.js",
+ "./book-library.js",
  "./export-webcodecs.js",
  "./fflate.min.js",
  "./fonts.js",
