@@ -159,9 +159,9 @@ window.NM = window.NM || {};
         id: `book-${id}-${i + 1}`,
         title: s.title, question: s.question, equation: s.equation, answer: '',
         speechText: [readable(s.question), s.equation ? '\u2066' + texText(s.equation) + '\u2069' : ''].filter(Boolean).join(' — ').slice(0, 4000),
-        duration: Math.round(s.duration * 2) / 2, qAt: 6, eAt: s.question ? 35 : 10, aAt: 80,
+        duration: Math.round(s.duration * 2) / 2, qAt: 6, eAt: s.question ? 30 : 6, aAt: 80, equationAnimDuration: 30,
         ...layout,
-        titleBg: s.result ? 'rounded' : 'none', titleBgColor: '#f4d96c', questionBg: 'none', equationAnim: 'fade',
+        titleBg: s.result ? 'rounded' : 'none', titleBgColor: '#f4d96c', questionBg: 'none', equationAnim: 'morph',
         ...(sims ? { sim: sims[i] } : {})
       }))
     };

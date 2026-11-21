@@ -484,7 +484,7 @@ window.NM = window.NM || {};
         title: st.title, question: st.question, equation: st.equation, answer: '', speechText: st.speech,
         duration: dur, qAt: 8, eAt: 40, aAt: 80,
         titleY: 19, questionY: 29, equationY: 79, titleSize: 55, questionSize: 38, equationScale: 112,
-        titleBg: 'none', questionBg: 'none', equationAnim: 'fade'
+        titleBg: 'none', questionBg: 'none', equationAnim: 'morph', equationAnimDuration: 30
       }))
     };
   }
