@@ -10,7 +10,7 @@
  const nav=document.querySelector('.mobile-bottom-nav');
  const head=$('mobileSheet');
  if(!editor||!scenes||!preview||!nav||!head)return;
- const labels={content:'المحتوى والسؤال',elements:'العناصر والرسوم',motion:'الحركة والخط الزمني',audio:'الصوت والتعليق',scenes:'المشاهد والمشروع',advanced:'إعدادات متقدمة'};
+ const labels={start:'ابدأ: فيديو في ثلاث خطوات',content:'المحتوى والسؤال',elements:'العناصر والرسوم',motion:'الحركة والخط الزمني',audio:'الصوت والتعليق',scenes:'المشاهد والمشروع',advanced:'إعدادات متقدمة'};
  // Move only UI nodes; app.js and specialist modules resolve elements by their stable IDs.
  const free=$('freeEditor'); const timeline=$('nmTimelineEditor');
  if(free)editor.append(free);
@@ -24,6 +24,7 @@
    if(el===free)section='elements';
    else if(el===timeline)section='motion';
    else if(el.tagName==='H2')section='hidden';
+   else if(el.matches('.nm-quick-path'))section='start';
    else {
      // classify by recognizable controls rather than positional dependence
      const id=el.id;
@@ -77,7 +78,7 @@
  function setPeek(on){document.body.classList.toggle('studio-drawer-peek',on);peek.textContent=on?'⌃ توسيع':'⌄ تصغير';peek.setAttribute('aria-pressed',String(on));peek.setAttribute('aria-label',on?'توسيع لوحة التحرير':'تصغير لوحة التحرير لتكبير المعاينة');if(!on)autoPeek=false;}
  peek.addEventListener('click',()=>setPeek(!document.body.classList.contains('studio-drawer-peek')));
  setPeek(false);
- const buttons=[['content','✎','المحتوى'],['elements','◇','العناصر'],['motion','◷','الحركة'],['audio','♫','الصوت'],['scenes','▦','المشاهد']];
+ const buttons=[['start','🚀','ابدأ'],['content','✎','المحتوى'],['elements','◇','العناصر'],['motion','◷','الحركة'],['audio','♫','الصوت'],['scenes','▦','المشاهد']];
  nav.replaceChildren();
  buttons.forEach(([mode,symbol,label])=>{
    const b=document.createElement('button');b.type='button';b.dataset.mobileTab=mode;b.setAttribute('aria-controls','mobileSheet');b.setAttribute('aria-expanded','false');
@@ -126,7 +127,7 @@
  if($('nmProperties'))observer.observe($('nmProperties'),{attributes:true,attributeFilter:['hidden']});
  if($('visualEditor'))observer.observe($('visualEditor'),{attributes:true,attributeFilter:['hidden']});
  // Start with preview unobstructed on phones, content visible on tablets and desktop.
- setView('content');
+ setView('start');
  if(media.matches){document.body.classList.remove('studio-drawer-open');head.hidden=true;}
  document.body.classList.add('studio-ready');
 })();
