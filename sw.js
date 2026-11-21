@@ -31,6 +31,7 @@ const ASSETS = [
  "./cairo-latin-700-normal.woff2",
  "./captions.js",
  "./cone-cinematic.js",
+ "./sim-engine.js",
  "./export-webcodecs.js",
  "./fflate.min.js",
  "./fonts.js",

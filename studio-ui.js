@@ -29,7 +29,7 @@
      const id=el.id;
      const input=el.matches('label')?el.getAttribute('for'):null;
      if(el.matches('.audio-panel'))section='audio';
-     else if(el.matches('.stickers,.nm-math-studio'))section='elements';
+     else if(el.matches('.stickers,.nm-math-studio,.nm-sim'))section='elements';
      else if(el.matches('.studio-typography'))section='content';
      else if(el.matches('.nm-question-advanced'))section='advanced';
      else if(el.matches('.question-math-tools,.nm-question-composer-wrap,.math-tools'))section='content';
