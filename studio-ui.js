@@ -13,6 +13,29 @@
  const shortLabels={start:'ابدأ',content:'المحتوى',elements:'العناصر',motion:'الحركة',audio:'الصوت',scenes:'المشاهد',advanced:'متقدم'};
  const labels={start:'ابدأ: فيديو في ثلاث خطوات',content:'المحتوى والسؤال',elements:'العناصر والرسوم',motion:'الحركة والخط الزمني',audio:'الصوت والتعليق',scenes:'المشاهد والمشروع',advanced:'إعدادات متقدمة'};
  // Move only UI nodes; app.js and specialist modules resolve elements by their stable IDs.
+ // Fold rarely used settings so each tab opens on what a teacher needs most (ids are untouched).
+ function fold(id,title,nodes,open=false){
+   nodes=nodes.filter(Boolean);if(!nodes.length)return null;
+   const d=document.createElement('details');d.className='nm-settings nm-fold';d.id=id;d.open=open;
+   const sm=document.createElement('summary');sm.textContent=title;d.append(sm);nodes[0].before(d);nodes.forEach(n=>d.append(n));return d;
+ }
+ const range=(from,to)=>{const out=[];for(let n=from;n&&n!==to;n=n.nextElementSibling)out.push(n);return out;};
+ const lab=id=>document.querySelector(`label[for="${id}"]`);
+ const audioPanel=document.querySelector('fieldset.audio-panel');
+ if(audioPanel&&lab('speechVoice')&&lab('ttsEndpoint')&&lab('audioFile')){
+   const h3=audioPanel.querySelector('h3'),h3box=h3&&(h3.parentElement===audioPanel?null:h3.closest('fieldset.audio-panel > *'));
+   // «prepare text from the scene» belongs next to the text box
+   const prep=$('prepareSpeech')?.closest('.actions');if(prep&&$('speechText'))$('speechText').after(prep);
+   const shortcut=h3box?[h3box]:(h3?range(h3,lab('speechVoice')):[]),preview=range(lab('speechVoice'),lab('ttsEndpoint')),cloud=range(lab('ttsEndpoint'),lab('audioFile'));
+   const f1=fold('nmFoldShortcut','🍎 صوت عربي مجاني باختصارات iPad',shortcut),f2=fold('nmFoldPreview','🔈 الاستماع التجريبي (لا يُضاف للفيديو)',preview),f3=fold('nmFoldCloud','☁ توليد صوت سحابي (اختياري)',cloud);
+   if(h3&&f1)f1.querySelector('h3').hidden=true;
+   [f1,f2,f3].forEach(d=>d&&audioPanel.append(d)); // the recording/import controls now come right after the text
+ }
+ const stickers=document.querySelector('fieldset.stickers');
+ if(stickers)fold('nmStickerFold','🏷 الملصقات التعليمية المتحركة',[stickers]);
+ const brand=document.querySelector('fieldset.branding-settings');
+ if(brand)fold('nmBrandFold','🪧 نص رأس الفيديو وذيله',[brand]);
+ const auto=$('autoReelsPanel');if(auto)auto.open=false;
  const free=$('freeEditor'); const timeline=$('nmTimelineEditor');
  if(free)editor.append(free);
  if(timeline)editor.append(timeline);
@@ -31,7 +54,7 @@
      const id=el.id;
      const input=el.matches('label')?el.getAttribute('for'):null;
      if(el.matches('.audio-panel'))section='audio';
-     else if(el.matches('.stickers,.nm-math-studio,.nm-sim'))section='elements';
+     else if(el.matches('.stickers,.nm-math-studio,.nm-sim,#nmStickerFold'))section='elements';
      else if(el.matches('.studio-typography'))section='content';
      else if(el.matches('.nm-question-advanced'))section='advanced';
      else if(el.matches('.question-math-tools,.nm-question-composer-wrap,.math-tools'))section='content';
@@ -85,6 +108,15 @@
    const glyph=document.createElement('span');glyph.textContent=symbol;glyph.setAttribute('aria-hidden','true');const small=document.createElement('small');small.textContent=label;b.append(glyph,small);nav.append(b);
  });
  const media=matchMedia('(max-width: 760px)');
+ // Tablets and desktop: the section tabs live in the header bar (one compact sticky bar instead of two),
+ // which leaves the height to the preview. Phones keep the bottom tab bar.
+ const header=document.querySelector('.header'),navHome=nav.parentNode,navNext=nav.nextSibling;
+ function placeNav(){
+   if(!header)return;
+   if(!media.matches){if(nav.parentNode!==header)header.insertBefore(nav,header.querySelector('.badge')||header.children[1]||null);}
+   else if(nav.parentNode===header)navHome.insertBefore(nav,navNext&&navNext.parentNode===navHome?navNext:null);
+ }
+ placeNav();
  let mode='content';
  function setView(next){
    if(!labels[next])return;
@@ -110,7 +142,7 @@
  nav.addEventListener('click',event=>{const b=event.target.closest('[data-mobile-tab]');if(b)setView(b.dataset.mobileTab)});
  $('mobileSheetClose')?.addEventListener('click',()=>{document.body.classList.remove('studio-drawer-open');setPeek(false);});
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&media.matches)document.body.classList.remove('studio-drawer-open')});
- media.addEventListener('change',()=>{document.body.classList.remove('studio-drawer-open');head.hidden=!media.matches});
+ media.addEventListener('change',()=>{document.body.classList.remove('studio-drawer-open');head.hidden=!media.matches;placeNav()});
  // Quick access to element-specific properties when selection changes, without disturbing Canvas touch handling.
  const observer=new MutationObserver(()=>{
    const active=($('nmProperties')&&!$('nmProperties').hidden)||($('visualEditor')&&!$('visualEditor').hidden);
